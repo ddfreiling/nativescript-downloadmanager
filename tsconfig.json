@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "target": "es5",
+        "module": "commonjs",
+        "removeComments": true,
+        "experimentalDecorators": true,
+        "sourceMap": true,
+        "noEmitOnError": false,
+        "declaration": true
+    },
+    "files": [
+      "demo/node_modules/tns-core-modules/tns-core-modules.d.ts",
+      "demo/node_modules/rxjs/Rx.d.ts",
+      "demo/node_modules/tns-platform-declarations/android17.d.ts",
+    //   "demo/node_modules/tns-platform-declarations/ios.d.ts",
+      "persistance.common.ts",
+      "persistance.android.ts", 
+      "persistance.ios.ts"
+    ],
+    "compileOnSave": false
+}
