@@ -1,4 +1,9 @@
-import app = require('application');
+import * as app from 'application';
+import * as appSettings from 'application-settings';
+
+import { Observable } from 'rxjs/Observable';
+import { Observer } from 'rxjs/Observer';
+import 'rxjs'
 
 export interface DownloadProgress {
     bytes: number;
@@ -6,49 +11,73 @@ export interface DownloadProgress {
     completedLocalPath?: string;
 }
 
-export type DownloadProgressCallback = (bytes: number, totalBytes: number) => void;
-
 export class DownloadRequest {
     url: string;
-    extDirPath: string;
+    toLocalUri: string;
     extraHeaders: { [key:string]:string; } = {};
     allowedOverMetered: boolean = false;
     showNotification: boolean = false;
     notificationTitle: string;
     notificationDescription: string;
-    progressCallback: DownloadProgressCallback;
 
-    constructor(url: string, extDirPath: string) {
+    constructor(url: string, toLocalUri: string) {
         this.url = url;
-        this.extDirPath = extDirPath;
+        this.toLocalUri = toLocalUri;
     }
 
-    setNotification(title: string, description: string): DownloadRequest {
+    setNotification(title: string, description: string): void {
         this.showNotification = true;
         this.notificationTitle = title;
         this.notificationDescription = description;
-        return this;
     }
 
-    setProgressCallback(callback: DownloadProgressCallback): DownloadRequest {
-        this.progressCallback = callback;
-        return this;
-    }
-
-    addExtraHeader(name: string, value: string): DownloadRequest {
+    addHeader(name: string, value: string): void {
         this.extraHeaders[name] = value;
-        return this;
     }
 }
 
-interface DownloadTask {
-    progressCallback: DownloadProgressCallback;
-    completionPromise: Promise<string>;
+export class DownloadInfoStatus {
+    PENDING = 1;
+    RUNNING = 2;
+    PAUSED = 4;
+    SUCCESFUL = 8;
+    FAILED = 16;
 }
+
+export interface DownloadInfo {
+    refId: number;
+    title: string;
+    downloadUri: string;
+    localUri: string;
+    bytesDownloaded: number;
+    bytesTotal: number;
+    status: number;
+    reason: string;
+}
+
+export enum DownloadState {
+    PENDING = 1,
+    RUNNING = 2,
+    PAUSED = 4,
+    SUCCESFUL = 8,
+    FAILED = 16,
+}
+
+export interface DownloadStatus {
+    refId: number;
+    bytesDownloaded: number;
+    bytesTotal: number;
+}
+
+
+
+
 
 export class DownloadManager {
 
-    private downloadObserverMap: { [refId:number]:Promise<string> } = {};
+    private _downloadManager: android.app.DownloadManager;
+    //private downloadTaskMap: { [refId:number]:Observer<DownloadStatus> } = {};
+    private downloadObserverMap: { [refId:number]:Observer<DownloadStatus> } = {};
 
     constructor() {
         app.android.registerBroadcastReceiver(android.app.DownloadManager.ACTION_DOWNLOAD_COMPLETE, (context, intent: android.content.Intent) => {
@@ -58,53 +87,62 @@ export class DownloadManager {
     }
 
     private get downloadManager(): android.app.DownloadManager {
-        return app.android.context.getSystemService(android.content.Context.DOWNLOAD_SERVICE);
-    }
-
-    getExternalFilesDirPath(filePath: string) {
-        const extFilesDir = getAndroidAppContext().getExternalFilesDir(null);
-        const f = new java.io.File(extFilesDir, filePath);
-        return f.exists() ? f.getCanonicalPath() : null;
-    }
-
-    getIDsForDownloadsInProgress(): number[] {
-        return getDownloadIdsByStatus(getInProgressStatusFlag());
-    }
-
-    downloadFileToExternalFolder(request: DownloadRequest) {
-        const req = new android.app.DownloadManager.Request(android.net.Uri.parse(request.url));
-        req.setShowRunningNotification(request.showNotification);
-        req.setTitle(request.notificationTitle);
-        req.setDescription(request.notificationDescription);
-        for (let headerName in request.extraHeaders) {
-            req.addRequestHeader(headerName, request.extraHeaders[headerName]);
+        if (!this._downloadManager) {
+            this._downloadManager = app.android.context.getSystemService(android.content.Context.DOWNLOAD_SERVICE);
         }
-        req.setAllowedOverMetered(request.allowedOverMetered);
-        req.setDestinationInExternalFilesDir(getAndroidAppContext(), ;
+        return this._downloadManager;
     }
 
-    downloadFile(downloadUrl: string, toFolder: string, allowedOverMetered: boolean): Promise<string> {
-        return new Promise((resolve, reject) => {
-            const uri = android.net.Uri.parse(downloadUrl);
-            const req = new android.app.DownloadManager.Request(android.net.Uri.parse(downloadUrl));
-            req.setAllowedOverMetered(allowedOverMetered);
-            req.setTitle("Skyggeforbandelsen");
-            req.setDescription("LYT3");
-            req.setDestinationInExternalFilesDir(getAndroidAppContext(), toFolder, uri.getLastPathSegment());
+    public getAndroidExternalFilesDir(): string {
+        return getAndroidAppContext().getExternalFilesDir(null).getCanonicalPath();
+    }
+
+    public getDownloadStatus(refId: number): Observable<DownloadStatus> {
+        if (this.downloadObserverMap[refId] && !this.downloadObserverMap[refId].isUnsubscribed) {
+            throw new Error('Download observable already created and currently subscribed to');
+        }
+        return Observable.create((observer: Observer<DownloadStatus>) => {
+            this.downloadObserverMap[refId] = observer;
+            monitorProgress(this.downloadManager, refId, observer);
+        });
+    }
+
+    public getIDsForDownloadsInProgress(): number[] {
+        return getDownloadIdsByStatus(this.downloadManager, getInProgressStatusFlag());
+    }
+
+    public downloadFile(request: DownloadRequest): Observable<DownloadStatus> {
+        return Observable.create((observer: Observer<DownloadStatus>) => {
             try {
+                const uri = android.net.Uri.parse(request.url);
+                const localUri = android.net.Uri.fromFile(new java.io.File(request.toLocalUri));
+                console.log(`Destination: ${localUri}`);
+                console.log(`ShowNoticicaiton: ${request.showNotification}`);
+                const req = new android.app.DownloadManager.Request(android.net.Uri.parse(request.url));
+                if (!request.showNotification) {
+                    //TODO: Need permission to download without notificaiton!
+                    req.setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_HIDDEN);
+                }
+                req.setTitle(request.notificationTitle);
+                req.setDescription(request.notificationDescription);
+                for (let headerName in request.extraHeaders) {
+                    console.log(`Adding header ${headerName}=${request.extraHeaders[headerName]}`);
+                    req.addRequestHeader(headerName, request.extraHeaders[headerName]);
+                }
+                req.setAllowedOverMetered(request.allowedOverMetered);
+                req.setDestinationUri(localUri);
                 const refId = this.downloadManager.enqueue(req);
-                console.log('Request refId: '+ refId);
+                console.log('Request refId: ' + refId);
+                this.downloadObserverMap[refId] = observer;
                 monitorProgress(this.downloadManager, refId, observer);
-                this.downloadObserverMap[refId] = new DownloadTask() observer;
-                //console.log(JSON.stringify(this.downloadObserverMap));
             } catch(ex) {
-                console.log('Caught exception: ' + ex);
-                reject(ex);
+                console.log('DownloadManager exception: ' + ex);
+                observer.error(ex);
             }
         });
     }
 
-    cancelAllDownloads() {
+    public cancelAllDownloads() {
         let downloadRefIds = Object.keys(this.downloadObserverMap).map((item) => parseInt(item))
         if (downloadRefIds.length > 0) {
             console.log(JSON.stringify(downloadRefIds));
@@ -112,79 +150,61 @@ export class DownloadManager {
         }
     }
     
-    cancelDownloads(...refIds: Array<number>) {
+    public cancelDownloads(...refIds: Array<number>) {
         this.downloadManager.remove(refIds);
     }
 
-    onDownloadComplete(refId: number) {
+    public destroy() {
+        app.android.unregisterBroadcastReceiver(android.app.DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+    }
+
+    private onDownloadComplete(refId: number) {
         try {
-            const downloadObservable = this.downloadObserverMap[refId];
-            if (downloadObservable) {
-                const localFilePath =  getDownloadedFilePath(this.downloadManager, refId);
-                if (localFilePath) {
-                    downloadObservable.complete();
-                    console.log('Complete: '+ getDownloadStatus(this.downloadManager, refId));
+            const downloadObserver = this.downloadObserverMap[refId];
+            if (downloadObserver) {
+                const state: DownloadState = getDownloadState(this.downloadManager, refId);
+                console.log('Download completed with state: '+ state);
+                if (state == DownloadState.SUCCESFUL) {
+                    const localFilePath =  getDownloadedFilePath(this.downloadManager, refId);
+                    console.log('- to local file path: '+ localFilePath);
+                    downloadObserver.complete();
                 } else {
-                    downloadObservable.error('Download failed or cancelled');
+                    downloadObserver.error('Download failed or cancelled');
                 }
                 delete this.downloadObserverMap[refId];
             }
         } catch (ex) {
-            console.log('err: '+ ex);
+            console.log('onDownloadComplete error: '+ ex);
         }
     }
-
-    destroy() {
-        app.android.unregisterBroadcastReceiver(android.app.DownloadManager.ACTION_DOWNLOAD_COMPLETE);
-    }
 }
+
+
+
+
+
+/* UTILS */
 
 function getAndroidAppContext(): android.content.Context {
     return app.android.context;
 }
 
-var downloadStatusMap = {
-    1: "STATUS_PENDING",
-    2: "STATUS_RUNNING",
-    4: "STATUS_PAUSED",
-    8: "STATUS_SUCCESSFUL",
-    16: "STATUS_FAILED",
-}
-
 function getDownloadedFilePath(manager: android.app.DownloadManager, refId: number): string {
-    let query = new android.app.DownloadManager.Query();
-    query.setFilterById([refId]);
-    let cursor = manager.query(query);
-    if (!cursor.moveToFirst()) {
-        return null;
-    }
-    let localFilenameColumnIndex = cursor.getColumnIndex(android.app.DownloadManager.COLUMN_LOCAL_FILENAME);
-    let localFilename = cursor.getString(localFilenameColumnIndex);
-    cursor.close();
-    return localFilename;
+    return getDownloadInfoString(manager, refId, android.app.DownloadManager.COLUMN_LOCAL_FILENAME);
 }
 
-function getDownloadStatus(manager: android.app.DownloadManager, refId: number): string {
-    let query = new android.app.DownloadManager.Query();
-    query.setFilterById([refId]);
-    let cursor = manager.query(query);
-    if (!cursor.moveToFirst()) {
-      return null;
-    }
-    let statusColumnIndex = cursor.getColumnIndex(android.app.DownloadManager.COLUMN_STATUS);
-    let status = cursor.getInt(statusColumnIndex);
-    cursor.close();
-    return downloadStatusMap[status];
+function getDownloadState(manager: android.app.DownloadManager, refId: number): DownloadState {
+    const status = getDownloadInfoLong(manager, refId, android.app.DownloadManager.COLUMN_STATUS);
+    return DownloadState[DownloadState[status]];
 }
 
-function getDownloadIdsByStatus(statusFlag: number) {
+function getDownloadIdsByStatus(manager: android.app.DownloadManager, statusFlag: number) {
     const query = new android.app.DownloadManager.Query();
     query.setFilterByStatus(statusFlag);
-    const cursor = this.downloadManager.query(query);
+    const cursor = manager.query(query);
     const downloadRefIds = new Array<number>();
     while (cursor.moveToNext()) {
-        const colIndex = cursor.getColumnIndex(android.app.DownloadManager.COLUMN_ID);
-        downloadRefIds.push(cursor.getLong(colIndex));
+        downloadRefIds.push(getCursorLong(cursor, android.app.DownloadManager.COLUMN_ID));
     }
     return downloadRefIds;
 }
@@ -193,32 +213,73 @@ function getInProgressStatusFlag(): number {
     return ~(android.app.DownloadManager.STATUS_FAILED | android.app.DownloadManager.STATUS_SUCCESSFUL)
 }
 
-function monitorProgress(manager: android.app.DownloadManager, refId: number, progressObserver: DownloadProgressCallback, updateInterval = 1000) {
-    let lastReportedBytes = 0;
+function monitorProgress(manager: android.app.DownloadManager, refId: number, progressObserver: Observer<DownloadStatus>, updateInterval = 1000) {
+    let lastReportedBytesDownloaded = 0;
     let progressCheckInterval = setInterval(() => {
         let query = new android.app.DownloadManager.Query();
         query.setFilterById([refId]);
         query.setFilterByStatus(getInProgressStatusFlag());
-        let cursorWasNotEmpty = false;
         let cursor = manager.query(query);
-        if (!cursor.moveToFirst()) {
-            console.log('Finished monitoring progress of download with refIds: '+ refId);
-            clearInterval(progressCheckInterval);
-            cursor.close();
-            return;
-        }
-        do {
-            let downloadedColIndex = cursor.getColumnIndex(android.app.DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR);
-            let totalColIndex = cursor.getColumnIndex(android.app.DownloadManager.COLUMN_TOTAL_SIZE_BYTES);
-            let totalBytes = cursor.getLong(totalColIndex);
-            let downloadedBytes = cursor.getLong(downloadedColIndex);
-            if (totalBytes > 0) {
-                if (downloadedBytes != lastReportedBytes) {
-                    lastReportedBytes = downloadedBytes;
-                    progressObserver(downloadedBytes, totalBytes);
-                }
+        if (cursor.moveToFirst()) {
+            let bytesTotal = getCursorLong(cursor, android.app.DownloadManager.COLUMN_TOTAL_SIZE_BYTES);
+            let bytesDownloaded = getCursorLong(cursor, android.app.DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR);
+            if (bytesDownloaded != lastReportedBytesDownloaded) {
+                lastReportedBytesDownloaded = bytesDownloaded;
+                progressObserver.next({refId: refId, bytesDownloaded: bytesDownloaded, bytesTotal: bytesTotal});
             }
-        } while (cursor.moveToNext());
+        } else {
+            clearInterval(progressCheckInterval);
+            console.log('Finished monitoring progress of download with refId: '+ refId);
+        }
         cursor.close();
     }, updateInterval);
+}
+
+function getDownloadInfo(manager: android.app.DownloadManager, refId: number) {
+    let query = new android.app.DownloadManager.Query();
+    query.setFilterById([refId]);
+    let cursor = manager.query(query);
+    if (!cursor.moveToFirst()) {
+        return null;
+    }
+    const info: DownloadInfo = {
+        refId: refId,
+        title: getCursorString(cursor, android.app.DownloadManager.COLUMN_TITLE),
+        bytesDownloaded: getCursorLong(cursor, android.app.DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR),
+        bytesTotal: getCursorLong(cursor, android.app.DownloadManager.COLUMN_TOTAL_SIZE_BYTES),
+        downloadUri: getCursorString(cursor, android.app.DownloadManager.COLUMN_URI),
+        localUri: getCursorString(cursor, android.app.DownloadManager.COLUMN_LOCAL_URI),
+        status: getCursorLong(cursor, android.app.DownloadManager.COLUMN_STATUS),
+        reason: getCursorString(cursor, android.app.DownloadManager.COLUMN_REASON)
+    };
+    cursor.close();
+    return info;
+}
+
+function getCursorLong(cursor: android.database.Cursor, colIndex: string): number {
+    return cursor.getLong(cursor.getColumnIndex(colIndex));
+}
+
+function getCursorString(cursor: android.database.Cursor, colIndex: string): string {
+    return cursor.getString(cursor.getColumnIndex(colIndex))
+}
+
+function getDownloadInfoLong(manager: android.app.DownloadManager, refId: number, colName: string): number {
+    const cursor = manager.query(new android.app.DownloadManager.Query().setFilterById([refId]));
+    if (!cursor.moveToFirst()) {
+        return null;
+    }
+    const result = getCursorLong(cursor, colName);
+    cursor.close();
+    return result;
+}
+
+function getDownloadInfoString(manager: android.app.DownloadManager, refId: number, colName: string): string {
+    const cursor = manager.query(new android.app.DownloadManager.Query().setFilterById([refId]));
+    if (!cursor.moveToFirst()) {
+        return null;
+    }
+    const result = getCursorString(cursor, colName);
+    cursor.close();
+    return result;
 }

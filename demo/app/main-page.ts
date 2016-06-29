@@ -12,7 +12,7 @@ import fs = require("file-system");
 import http = require("http");
 import imageSource = require("image-source");
 
-import {DownloadManager} from './downloadmanager';
+import {DownloadManager, DownloadRequest} from './downloadmanager';
 
 var dlMan = new DownloadManager();
 
@@ -41,21 +41,20 @@ export function onDownload() {
     // let bookJavaFile = new java.io.File(docs.path);
     // traceJavaFolderTree(bookJavaFile, 1);
     let appContext: android.content.Context = app.android.context;
-    let extDir: java.io.File = appContext.getExternalFilesDir(null);
-    traceJavaFolderTree(extDir, 9);
-    let extDirPath = dlMan.getExternalFilesDirPath("books")
-    console.log('ext file path: '+ extDirPath);
-    let extFsFile = fs.Folder.fromPath(extDirPath);
-    traceFolderTree(extFsFile, 1);
+    //let extDir: java.io.File = appContext.getExternalFilesDir(null);
+    //traceJavaFolderTree(extDir, 9);
+    const extPath = fs.path.join(dlMan.getAndroidExternalFilesDir(), "books", "123", "book.zip");
+    console.log('ext file path: '+ extPath);
+    //traceFolderTree(dlMan.getAndroidExternalFilesDir(), 1);
     
     setInterval(() => {
         for (let id of dlMan.getIDsForDownloadsInProgress()) {
             console.log('in-progress: '+ id);
         }
-    }, 1000)
+    }, 1000);
     
-    dlMan.downloadFile(downloadUrl, "books").subscribe((next) => {
-        console.log(`Progress: ${next.bytes} / ${next.totalBytes} (${Math.round(next.bytes / next.totalBytes * 100)})`);
+    dlMan.downloadFile(new DownloadRequest(downloadUrl, extPath)).subscribe((next) => {
+        console.log(`Progress: ${next.bytesDownloaded} / ${next.bytesTotal} (${Math.round(next.bytesDownloaded / next.bytesTotal * 100)})`);
     }, (err) => {
         console.log('Error! '+ err);
     }, () => {
