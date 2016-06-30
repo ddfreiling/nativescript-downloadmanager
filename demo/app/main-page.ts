@@ -12,18 +12,21 @@ import fs = require("file-system");
 import http = require("http");
 import imageSource = require("image-source");
 
-import {DownloadManager, DownloadRequest, DownloadStatus} from './downloadmanager';
+import {DownloadManager, DownloadRequest, DownloadStatus} from './download-manager';
 import {PersistanceModule} from './persistance-module';
 import {PermissionUtil} from './permission-util';
 
 const dlMan = new DownloadManager();
 const mod = new PersistanceModule();
 
+var model: HelloWorldModel;
+
 // Event handler for Page "loaded" event attached in main-page.xml
 export function pageLoaded(args: observable.EventData) {
     // Get the event sender
     var page = <pages.Page>args.object;
-    page.bindingContext = new HelloWorldModel();
+    model = new HelloWorldModel();
+    page.bindingContext = model;
 }
 
 var bookId = '123456';
@@ -33,10 +36,12 @@ export function onShowStoredFiles() {
 }
 
 export function onDownloadBook() {
-    mod.deleteBook(bookId).then(() => {
+    mod.deleteBookContent(bookId).then(() => {
         mod.startDownloadingBook(bookId).subscribe((next) => {
             if (next.bytesTotal > 0) {
                 const percent = Math.round(next.bytesDownloaded / next.bytesTotal * 100);
+                model.progress = percent;
+                model.notifyPropertyChange('progress', percent);
                 console.log(`- Book download progress: ${percent}%`);
             } else {
                 console.log(`- Book download progress: ${next.bytesDownloaded / 1000} kB`);
