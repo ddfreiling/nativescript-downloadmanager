@@ -9,8 +9,9 @@ import 'rxjs'
 import { DownloadManager, DownloadRequest, DownloadStatus } from './downloadmanager';
 
 const BookStorageFolderName = 'books';
-const MagicFullyDownloadedFileName = 'fully_downloaded';
+const BookContentFolderName = 'content';
 const BookMetadataFileName = 'metadata.json';
+const MagicFullyDownloadedFileName = 'fully_downloaded';
 
 interface BookDownloadTask {
     bookId: string;
@@ -26,36 +27,44 @@ export class PersistanceModule {
         this.man = new DownloadManager();
     }
     
+    getBookDownloadStatus(bookId: string) {
+        
+    }
+    
     debugPrintStorageFolder() {
         const bookFolder = getBookStorageFolder();
         console.log('Folder: '+ bookFolder.path);
         traceFolderTree(bookFolder);
     }
     
-    deleteBook(bookId: string) {
-        return fs.Folder.fromPath(getBookFolderPath(bookId)).clear();
-    }
-    
     getBookFolder(bookId: string) {
         return getBookFolderPath(bookId);
+    }
+    
+    deleteBook(bookId: string): Promise<any> {
+        return fs.Folder.fromPath(getBookFolderPath(bookId)).remove();
     }
     
     startDownloadingBook(bookId: string): Observable<DownloadStatus> {
         // get list of URIs from book contentlist
         const testDownloads = [
             { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '1.mp3' },
-            { url: 'http://ipv4.download.thinkbroadband.com/10MB.zip', localUri: '2.mp3' },
-            { url: 'http://ipv4.download.thinkbroadband.com/20MB.zip', localUri: '3.mp3' },
+            { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '2.mp3' },
+            { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '3.mp3' },
+            // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '4.mp3' },
+            // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '5.mp3' },
+            // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '6.mp3' },
+            // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '7.mp3' },
+            // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '8.mp3' },
+            // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '9.mp3' },
         ];
         return Observable.from(testDownloads).concatMap((src) => {
             const req = new DownloadRequest(src.url, getPathForBookLocalUri(bookId, src.localUri));
             req.setNotification('Harry Potter: Fangen fra Azkaban', 'LYT3');
             req.allowedOverMetered = true;
             return this.man.downloadFile(req);
-        }).finally<DownloadStatus>(() => {
-            console.log('WRITING MAGIC FILE');
-            const magicFilePath = fs.path.join(getBookFolderPath(bookId), MagicFullyDownloadedFileName);
-            fs.File.fromPath(magicFilePath).writeText("");
+        }).do(null, null, () => {
+            markBookFullyDownloaded(bookId);
         });
     }
     
@@ -64,12 +73,12 @@ export class PersistanceModule {
     }
     
     loadBookMetadata(bookId: string): Promise<any> {
-        const metaPath = fs.path.join(getBookFolderPath(bookId), BookMetadataFileName);
-        const metaFile = fs.File.fromPath(metaPath);
-        if (!fs.File.exists(metaPath)) {
-            return Promise.reject('Cannot load metadata. Path does not exist: '+ metaPath);
+        if (!this.hasBookMetadata(bookId)) {
+            return Promise.reject('Cannot load metadata. File does not exist');
         } else {
-            return metaFile.readText().then((text) => JSON.parse(text));
+            const metaPath = fs.path.join(getBookFolderPath(bookId), BookMetadataFileName);
+            const metaFile = fs.File.fromPath(metaPath);
+            return fs.File.fromPath(metaPath).readText().then((text) => JSON.parse(text));
         }
     }
     
@@ -79,7 +88,7 @@ export class PersistanceModule {
         return metaFile.writeText(JSON.stringify(bookMetadata));
     }
     
-    hasDownloadedBook(bookId: string) {
+    hasFullyDownloadedBook(bookId: string) {
         return fs.File.exists(fs.path.join(getBookFolderPath(bookId), MagicFullyDownloadedFileName));
     }
     
@@ -96,6 +105,12 @@ export class PersistanceModule {
 
 /* Private */
 
+function markBookFullyDownloaded(bookId: string) {
+    console.log('WRITING MAGIC FILE');
+    const magicFilePath = fs.path.join(getBookFolderPath(bookId), MagicFullyDownloadedFileName);
+    fs.File.fromPath(magicFilePath).writeText("");
+}
+
 function getBookStorageFolder(): fs.Folder {
     let extFolder = fs.knownFolders.documents();
     if (app.android) {
@@ -110,7 +125,7 @@ function getBookFolderPath(bookId: string): string {
 }
 
 function getPathForBookLocalUri(bookId: string, localUri: string) {
-    return fs.path.join(getBookFolderPath(bookId), localUri);
+    return fs.path.join(getBookFolderPath(bookId), BookContentFolderName, localUri);
 }
 
 function traceFolderTree(folder: fs.Folder, maxDepth: number = 3, depth: number = 0) {
