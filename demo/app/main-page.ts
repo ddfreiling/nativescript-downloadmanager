@@ -54,6 +54,26 @@ export function onDownloadBook() {
     });
 }
 
+export function onDownloadBookJob() {
+    mod.deleteBookContent(bookId).then(() => {
+        mod.startDownloadingBookJob(bookId).subscribe((next) => {
+            let percent = Math.round((next.bytesTotal > 0) ?
+                next.bytesDownloaded / next.bytesTotal * 100 :
+                next.downloadsCompleted / next.downloadsTotal * 100
+            );
+            model.progress = percent;
+            model.notifyPropertyChange('progress', percent);
+            console.log(`- Book download progress: ${percent}%`);
+            console.log(`- Book download progress: ${next.downloadsCompleted} / ${next.downloadsTotal} completed`);
+            console.log(`- Book download progress: ${Math.round(next.bytesDownloaded / 1000)} / ${Math.round(next.bytesTotal / 1000)} kB`);
+        }, (err) => {
+            console.log('--> Error: '+ err);
+        }, () => {
+            console.log('--> Book fully downloaded!');
+        }); 
+    });
+}
+
 export function onHasMeta() {
     console.log('onTest - bookFolder: '+ mod.getBookFolder(bookId));
     const hasBook = mod.hasBookMetadata(bookId);

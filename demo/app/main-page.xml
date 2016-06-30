@@ -2,7 +2,7 @@
   <StackLayout>
     <Label text="{{ message }}" class="message" textWrap="true"/>
     <Button text="Stored Files" tap="onShowStoredFiles"></Button>
-    <Button text="Download Book" tap="onDownloadBook"></Button>
+    <Button text="Download Book" tap="onDownloadBookJob"></Button>
     <Progress value="{{ progress }}"></Progress>
     <Button text="Store" tap="onStoreMeta"></Button>
     <Button text="Load" tap="onLoadMeta"></Button>

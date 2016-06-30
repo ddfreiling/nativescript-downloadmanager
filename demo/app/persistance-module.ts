@@ -7,6 +7,7 @@ import { Observer } from 'rxjs/Observer';
 import 'rxjs'
 
 import { DownloadManager, DownloadRequest, DownloadStatus } from './download-manager';
+import { DownloadJobManager, DownloadJob, DownloadJobStatus } from './download-job-manager';
 
 const BookStorageFolderName = 'books';
 const BookContentFolderName = 'content';
@@ -19,12 +20,29 @@ interface BookDownloadTask {
     dlFinishedForIDs: number[];
 }
 
+
+// mocked list of URIs from book contentlist
+const testContentList = [
+    { url: 'http://ipv4.download.thinkbroadband.com/10MB.zip', localUri: '1.mp3' },
+    { url: 'http://ipv4.download.thinkbroadband.com/10MB.zip', localUri: '2.mp3' },
+    { url: 'http://ipv4.download.thinkbroadband.com/10MB.zip', localUri: '3.mp3' },
+    // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '4.mp3' },
+    // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '5.mp3' },
+    // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '6.mp3' },
+    // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '7.mp3' },
+    // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '8.mp3' },
+    // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '9.mp3' },
+];
+
+
 export class PersistanceModule {
     
     man: DownloadManager;
+    jobMan: DownloadJobManager;
     
     constructor() {
         this.man = new DownloadManager();
+        this.jobMan = new DownloadJobManager();
     }
     
     getBookDownloadStatus(bookId: string) {
@@ -41,24 +59,27 @@ export class PersistanceModule {
         return getBookFolderPath(bookId);
     }
     
-    deleteBook(bookId: string): Promise<any> {
-        return fs.Folder.fromPath(getBookFolderPath(bookId)).remove();
+    deleteBookContent(bookId: string): Promise<any> {
+        const contentPath = fs.path.join(getBookFolderPath(bookId), BookContentFolderName);
+        return fs.Folder.fromPath(contentPath).remove();
+    }
+    
+    startDownloadingBookJob(bookId: string): Observable<DownloadJobStatus> {
+        const downloadJob = {
+            executeSequential: true,
+            jobName: 'Jobname_123456',
+            requests: testContentList.map((src) => {
+                const req = new DownloadRequest(src.url, getPathForBookLocalUri(bookId, src.localUri));
+                //req.setNotification('Harry Potter: Fangen fra Azkaban', 'LYT3');
+                req.allowedOverMetered = true;
+                return req;
+            }),
+        };
+        return this.jobMan.startDownloadJob(downloadJob);
     }
     
     startDownloadingBook(bookId: string): Observable<DownloadStatus> {
-        // get list of URIs from book contentlist
-        const testDownloads = [
-            { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '1.mp3' },
-            { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '2.mp3' },
-            { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '3.mp3' },
-            // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '4.mp3' },
-            // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '5.mp3' },
-            // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '6.mp3' },
-            // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '7.mp3' },
-            // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '8.mp3' },
-            // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '9.mp3' },
-        ];
-        return Observable.from(testDownloads).concatMap((src) => {
+        return Observable.from(testContentList).concatMap((src) => {
             const req = new DownloadRequest(src.url, getPathForBookLocalUri(bookId, src.localUri));
             req.setNotification('Harry Potter: Fangen fra Azkaban', 'LYT3');
             req.allowedOverMetered = true;
