@@ -6,7 +6,7 @@ import { Observable } from 'rxjs/Observable';
 import { Observer } from 'rxjs/Observer';
 import 'rxjs'
 
-import { DownloadManager, DownloadRequest, DownloadStatus } from './downloadmanager';
+import { DownloadManager, DownloadRequest, DownloadStatus } from './download-manager';
 
 const BookStorageFolderName = 'books';
 const BookContentFolderName = 'content';

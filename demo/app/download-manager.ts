@@ -1,5 +1,4 @@
 import * as app from 'application';
-import * as appSettings from 'application-settings';
 
 import { Observable } from 'rxjs/Observable';
 import { Observer } from 'rxjs/Observer';
@@ -8,7 +7,7 @@ import 'rxjs'
 export class DownloadRequest {
     url: string;
     toLocalUri: string;
-    extraHeaders: { [key:string]:string; } = {};
+    extraHeaders: { [key:string]: string } = {};
     allowedOverMetered: boolean = false;
     showNotification: boolean = false;
     notificationTitle: string;
@@ -52,7 +51,7 @@ export interface DownloadStatus {
 
 export class DownloadManager {
 
-    private _progressMonitorInterval: any;
+    private _progressMonitorInterval: number;
     private _downloadManager: android.app.DownloadManager;
     private _downloadObserverMap: { [refId:number]:Observer<DownloadStatus> } = {};
 
@@ -111,7 +110,7 @@ export class DownloadManager {
                 const refId = this.downloadManager.enqueue(req);
                 console.log('Request refId: ' + refId);
                 this._downloadObserverMap[refId] = observer;
-                monitorProgress(this.downloadManager, refId, observer);
+                this.ensureMonitoringProgress();
             } catch(ex) {
                 console.log('DownloadManager exception: ' + ex);
                 observer.error(ex);
@@ -134,7 +133,39 @@ export class DownloadManager {
     }
 
     destroy() {
+        this.stopMonitoringProgress();
         app.android.unregisterBroadcastReceiver(android.app.DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+    }
+    
+    private ensureMonitoringProgress() {
+        if (!this._progressMonitorInterval) {
+            let lastReportedBytesDownloaded: { [refId:number]:number } = {};
+            this._progressMonitorInterval = setInterval(() => {
+                console.log('_interval-start');
+                const refIdsInProgress = this.getIDsForDownloadsInProgress();
+                if (refIdsInProgress.length == 0) {
+                    this.stopMonitoringProgress();
+                    return;
+                }
+                for (const refId of refIdsInProgress) {
+                    const status = getDownloadStatus(this.downloadManager, refId);
+                    const observer = this._downloadObserverMap[refId];
+                    if (status && observer) {
+                        console.log(`_interval: refId=${status.refId}, state=${DownloadState[status.state]}`);
+                        if (status.bytesDownloaded != lastReportedBytesDownloaded[refId]) {
+                            lastReportedBytesDownloaded[refId] = status.bytesDownloaded;
+                            observer.next(status);
+                        }
+                    }
+                }
+            }, 1000);
+        }
+    }
+    
+    private stopMonitoringProgress() {
+        console.log('_clear-interval');
+        clearInterval(this._progressMonitorInterval);
+        delete this._progressMonitorInterval;
     }
 
     private onDownloadComplete(refId: number) {
@@ -144,8 +175,10 @@ export class DownloadManager {
                 const status: DownloadStatus = getDownloadStatus(this.downloadManager, refId);
                 console.log('Download completed with state: '+ DownloadState[status.state]);
                 if (status.state == DownloadState.SUCCESFUL) {
-                    const localFilePath =  getDownloadedFilePath(this.downloadManager, refId);
+                    const localFilePath = getDownloadedFilePath(this.downloadManager, refId);
                     console.log('- to local file path: '+ localFilePath);
+                    status.bytesDownloaded = Math.max(status.bytesDownloaded, status.bytesTotal);
+                    downloadObserver.next(status);
                     downloadObserver.complete();
                 } else {
                     downloadObserver.error(`Download failed. ${DownloadState[status.state]} = ${status.reason}`);
@@ -195,7 +228,7 @@ function monitorProgress(manager: android.app.DownloadManager, refId: number, pr
         
         const status = getDownloadStatus(manager, refId);
         
-        if (status && isActiveDownloadState(status.state)) {
+        if (status && isInProgress(status.state)) {
             console.log(`_interval ${refId}/${status.refId} state = ${DownloadState[status.state]}`);
             if (status.bytesDownloaded != lastReportedBytesDownloaded) {
                 lastReportedBytesDownloaded = status.bytesDownloaded;
@@ -209,7 +242,7 @@ function monitorProgress(manager: android.app.DownloadManager, refId: number, pr
     }, updateInterval);
 }
 
-function isActiveDownloadState(state: DownloadState) {
+function isInProgress(state: DownloadState) {
     return state & getInProgressStatusFlag();
 }
 
