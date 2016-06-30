@@ -12,16 +12,63 @@ import fs = require("file-system");
 import http = require("http");
 import imageSource = require("image-source");
 
-import {DownloadManager, DownloadRequest} from './downloadmanager';
+import {DownloadManager, DownloadRequest, DownloadStatus} from './downloadmanager';
+import {PersistanceModule} from './persistance-module';
+import {PermissionUtil} from './permission-util';
 
-var dlMan = new DownloadManager();
+const dlMan = new DownloadManager();
+const mod = new PersistanceModule();
 
 // Event handler for Page "loaded" event attached in main-page.xml
 export function pageLoaded(args: observable.EventData) {
     // Get the event sender
     var page = <pages.Page>args.object;
     page.bindingContext = new HelloWorldModel();
+}
 
+var bookId = '123456';
+
+export function onShowStoredFiles() {
+    mod.debugPrintStorageFolder();
+}
+
+export function onDownloadBook() {
+    mod.deleteBook(bookId).then(() => {
+        mod.startDownloadingBook(bookId).subscribe((next) => {
+            if (next.bytesTotal > 0) {
+                const percent = Math.round(next.bytesDownloaded / next.bytesTotal * 100);
+                console.log(`- Book download progress: ${percent}%`);
+            } else {
+                console.log(`- Book download progress: ${next.bytesDownloaded / 1000} kB`);
+            }
+        }, (err) => {
+            console.log('--> Error: '+ err);
+        }, () => {
+            console.log('--> Book fully downloaded!');
+        }); 
+    });
+}
+
+export function onHasMeta() {
+    console.log('onTest - bookFolder: '+ mod.getBookFolder(bookId));
+    const hasBook = mod.hasBookMetadata(bookId);
+    console.log('onTest - hasBook? '+ hasBook);
+}
+
+export function onLoadMeta() {
+    mod.loadBookMetadata(bookId).then((meta) => {
+        console.log('onLoadMeta - Done: '+ JSON.stringify(meta));
+    }).catch((err) => {
+        console.log('onLoadMeta - Error: '+ err);
+    });
+}
+
+export function onStoreMeta() {
+    mod.storeBookMetadata(bookId, { book: 'meta' }).then(() => {
+        console.log('onStoreMeta - Done!');
+    }).catch((err) => {
+        console.log('onStoreMeta - Error: '+ err);
+    });
 }
 
 export function onDownload() {

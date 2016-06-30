@@ -120,7 +120,7 @@ export class DownloadManager {
                 console.log(`ShowNoticicaiton: ${request.showNotification}`);
                 const req = new android.app.DownloadManager.Request(android.net.Uri.parse(request.url));
                 if (!request.showNotification) {
-                    //TODO: Need permission to download without notificaiton!
+                    // Permission needed to download without notification!
                     req.setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_HIDDEN);
                 }
                 req.setTitle(request.notificationTitle);
