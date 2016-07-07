@@ -1,47 +1,46 @@
 {
-	"name": "nativescript-persistance",
-	"version": "1.0.0",
-	"description": "Your awesome NativeScript plugin.",
-	"main": "persistance.js",
-	"typings": "persistance.android.d.ts",
-	"nativescript": {
-		"platforms": {
-			"android": "2.0.0",
+  "name": "@nota/nativescript-downloadmanager",
+  "version": "0.1.0",
+  "description": "Plugin for Nativescript, which wraps background download-managers on iOS and Android",
+  "main": "download-man.js",
+  "typings": "download-man.types.d.ts",
+  "nativescript": {
+    "platforms": {
+      "android": "2.0.0",
       "ios": "2.0.1"
-		}
-	},
-	"scripts": {
-		"build": "tsc",
+    }
+  },
+  "scripts": {
+    "build": "tsc",
     "demo.ios": "npm run preparedemo && cd demo && tns emulate ios",
-		"demo.android": "npm run preparedemo && cd demo && tns run android",
-		"reload": "cd demo && tns plugin remove nativescript-persistance && tns plugin add .. && tns install",
-		"preparedemo": "npm run build && npm run reload",
-		"setup": "cd demo && npm install && cd .. && npm run build && cd demo && tns plugin add .. && cd .."
-	},
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/YourName/nativescript-yourplugin.git"
-	},
-	"keywords": [
-		"NativeScript",
-		"JavaScript",
-		"Android",
-		"iOS"
-	],
-	"author": {
-		"name": "Your Name",
-		"email": "youremail@yourdomain.com"
-	},
-	"bugs": {
-		"url": "https://github.com/YourName/nativescript-yourplugin/issues"
-	},
-	"license": {
-		"type": "LGPL3",
-		"url": "https://github.com/YourName/nativescript-yourplugin/blob/master/LICENSE"
-	},
-	"homepage": "https://github.com/YourName/nativescript-yourplugin",
-	"readmeFilename": "README.md",
-	"devDependencies": {
-		"typescript": "^1.8.10"
-	}
+    "demo.android": "npm run preparedemo && cd demo && tns run android",
+    "reload": "cd demo && tns plugin remove @nota/nativescript-downloadmanager && tns plugin add .. && tns install",
+    "preparedemo": "npm run build && npm run reload",
+    "setup": "cd demo && npm install && cd .. && npm run build && cd demo && tns plugin add .. && cd .."
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dfg-nota/nativescript-downloadmanager.git"
+  },
+  "keywords": [
+    "NativeScript",
+    "JavaScript",
+    "Android",
+    "iOS"
+  ],
+  "contributors": [
+    {
+      "name": "Daniel Freiling",
+      "email": "ddfreiling@gmail.com"
+    }
+  ],
+  "bugs": {
+    "url": "https://github.com/dfg-nota/nativescript-downloadmanager/issues"
+  },
+  "license": "LGPL-3.0",
+  "homepage": "https://github.com/dfg-nota/nativescript-downloadmanager",
+  "readmeFilename": "README.md",
+  "devDependencies": {
+    "typescript": "^1.8.10"
+  }
 }

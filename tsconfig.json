@@ -9,13 +9,12 @@
         "declaration": true
     },
     "files": [
-      "demo/node_modules/tns-core-modules/tns-core-modules.d.ts",
-      "demo/node_modules/rxjs/Rx.d.ts",
       "demo/node_modules/tns-platform-declarations/android17.d.ts",
     //   "demo/node_modules/tns-platform-declarations/ios.d.ts",
-      "persistance.common.ts",
-      "persistance.android.ts", 
-      "persistance.ios.ts"
+      "demo/node_modules/tns-core-modules/tns-core-modules.d.ts",
+      "download-man.common.ts",
+      "download-man.android.ts", 
+      "download-man.ios.ts"
     ],
     "compileOnSave": false
 }

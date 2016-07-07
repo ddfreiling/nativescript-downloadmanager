@@ -2,12 +2,13 @@
   <StackLayout>
     <Label text="{{ message }}" class="message" textWrap="true"/>
     <Button text="Stored Files" tap="onShowStoredFiles"></Button>
-    <Button text="Download Book" tap="onDownloadBookJob"></Button>
+    <Button text="Download Book" tap="onDownloadBook"></Button>
+    <Button text="Resume Job" tap="onDownloadBookResume"></Button>
+    <Button text="Delete Jobs" tap="onDeleteJobs"></Button>
     <Progress value="{{ progress }}"></Progress>
     <Button text="Store" tap="onStoreMeta"></Button>
     <Button text="Load" tap="onLoadMeta"></Button>
     <Button text="HasMeta?" tap="onHasMeta"></Button>
     <Button text="Download File" tap="onDownload"></Button>
-    <Button text="Cancel" tap="onCancel"></Button>
   </StackLayout>
 </Page>

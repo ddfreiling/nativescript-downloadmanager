@@ -1,16 +1,16 @@
 import {Observable} from 'data/observable';
-import {YourPlugin} from 'nativescript-persistance';
+import {DownloadManager} from '@nota/nativescript-downloadmanager';
 
 export class HelloWorldModel extends Observable {
   public message: string;
   public progress: number;
-  private yourPlugin: YourPlugin;
+  private yourPlugin: DownloadManager;
 
   constructor() {
     super();
 
-    this.yourPlugin = new YourPlugin();
-    this.message = this.yourPlugin.message;
+    this.yourPlugin = new DownloadManager();
+    this.message = 'Demo app';
     this.progress = 0;
   }
 }

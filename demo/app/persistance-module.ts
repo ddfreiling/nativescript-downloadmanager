@@ -6,7 +6,7 @@ import { Observable } from 'rxjs/Observable';
 import { Observer } from 'rxjs/Observer';
 import 'rxjs'
 
-import { DownloadManager, DownloadRequest, DownloadStatus } from './download-manager';
+import { DownloadManager, DownloadRequest, DownloadStatus } from '@nota/nativescript-downloadmanager';
 import { DownloadJobManager, DownloadJob, DownloadJobStatus } from './download-job-manager';
 
 const BookStorageFolderName = 'books';
@@ -14,150 +14,156 @@ const BookContentFolderName = 'content';
 const BookMetadataFileName = 'metadata.json';
 const MagicFullyDownloadedFileName = 'fully_downloaded';
 
-interface BookDownloadTask {
-    bookId: string;
-    dlManIDs: number[];
-    dlFinishedForIDs: number[];
-}
-
-
 // mocked list of URIs from book contentlist
 const testContentList = [
-    { url: 'http://ipv4.download.thinkbroadband.com/10MB.zip', localUri: '1.mp3' },
-    { url: 'http://ipv4.download.thinkbroadband.com/10MB.zip', localUri: '2.mp3' },
-    { url: 'http://ipv4.download.thinkbroadband.com/10MB.zip', localUri: '3.mp3' },
-    // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '4.mp3' },
-    // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '5.mp3' },
-    // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '6.mp3' },
-    // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '7.mp3' },
-    // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '8.mp3' },
-    // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '9.mp3' },
+  { url: 'http://ipv4.download.thinkbroadband.com/200MB.zip', localUri: '1.mp3' },
+  { url: 'http://ipv4.download.thinkbroadband.com/200MB.zip', localUri: '2.mp3' },
+  { url: 'http://ipv4.download.thinkbroadband.com/200MB.zip', localUri: '3.mp3' },
+  { url: 'http://ipv4.download.thinkbroadband.com/200MB.zip', localUri: '4.mp3' },
+  // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '5.mp3' },
+  // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '6.mp3' },
+  // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '7.mp3' },
+  // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '8.mp3' },
+  // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '9.mp3' },
 ];
 
 
 export class PersistanceModule {
-    
-    man: DownloadManager;
-    jobMan: DownloadJobManager;
-    
-    constructor() {
-        this.man = new DownloadManager();
-        this.jobMan = new DownloadJobManager();
+
+  private _jobManager: DownloadJobManager;
+
+  private get jobManager(): DownloadJobManager {
+    if (!this._jobManager) {
+      this._jobManager = new DownloadJobManager();
     }
-    
-    getBookDownloadStatus(bookId: string) {
-        
+    return this._jobManager;
+  }
+
+  /* DEBUG */
+  
+  debugPrintStorageFolder() {
+    const bookFolder = getBookStorageFolder();
+    console.log('Folder: '+ bookFolder.path);
+    traceFolderTree(bookFolder);
+  }
+  
+  getBookFolder(bookId: string) {
+    return this.getBookFolderPath(bookId);
+  }
+
+  getBookFolderPath(bookId: string): string {
+    return fs.path.join(getBookStorageFolder().path, bookId);
+  }
+
+  getBookLocalUriPath(bookId: string, localUri: string) {
+    return fs.path.join(this.getBookFolderPath(bookId), BookContentFolderName, localUri);
+  }
+
+  /* BOOK DOWNLOAD */
+
+  isDownloadingBook(bookId: string): boolean {
+    return this.jobManager.hasRunningJob(bookId);
+  }
+
+  stopAllBookDownloads() {
+    this.jobManager.deleteAllJobs();
+  }
+  
+  deleteBookContents(bookId: string): Promise<any> {
+    this.jobManager.deleteJob(bookId);
+    const contentPath = fs.path.join(this.getBookFolderPath(bookId), BookContentFolderName);
+    return fs.Folder.fromPath(contentPath).remove().then(() => {
+      return setBookFullyDownloaded(bookId, false);
+    });
+  }
+
+  startDownloadingBook(bookId: string): Observable<DownloadJobStatus> {
+    console.log(`---> start new downloadjob for bookId ${bookId}`);
+    const downloadJob: DownloadJob = new DownloadJob(bookId, testContentList.map((src) => {
+      const req = new DownloadRequest(src.url, this.getBookLocalUriPath(bookId, src.localUri));
+      req.setNotification('Harry Potter: Fangen fra Azkaban', 'LYT3');
+      req.allowedOverMetered = true;
+      return req;
+    }));
+    this.jobManager.submitJob(downloadJob);
+    return this.jobManager.getJobStatus(bookId).do(null, null, () => {
+      setBookFullyDownloaded(bookId, true);
+    });
+  }
+  
+  resumeDownloadingBook(bookId: string): Observable<DownloadJobStatus> {
+    console.log(`---> resume downloadjob for bookId ${bookId}`);
+    return this.jobManager.getJobStatus(bookId).do(null, null, () => {
+      setBookFullyDownloaded(bookId, true);
+    });
+  }
+  
+  hasFullyDownloadedBook(bookId: string) {
+    return fs.File.exists(fs.path.join(this.getBookFolderPath(bookId), MagicFullyDownloadedFileName));
+  }
+
+  /* METADATA */
+  
+  hasBookMetadata(bookId: string): boolean {
+    return fs.File.exists(fs.path.join(this.getBookFolderPath(bookId), BookMetadataFileName));
+  }
+  
+  loadBookMetadata(bookId: string): Promise<any> {
+    if (!this.hasBookMetadata(bookId)) {
+      return Promise.reject('Cannot load metadata. File does not exist');
+    } else {
+      const metaPath = fs.path.join(this.getBookFolderPath(bookId), BookMetadataFileName);
+      const metaFile = fs.File.fromPath(metaPath);
+      return fs.File.fromPath(metaPath).readText().then((text) => JSON.parse(text));
     }
-    
-    debugPrintStorageFolder() {
-        const bookFolder = getBookStorageFolder();
-        console.log('Folder: '+ bookFolder.path);
-        traceFolderTree(bookFolder);
-    }
-    
-    getBookFolder(bookId: string) {
-        return getBookFolderPath(bookId);
-    }
-    
-    deleteBookContent(bookId: string): Promise<any> {
-        const contentPath = fs.path.join(getBookFolderPath(bookId), BookContentFolderName);
-        return fs.Folder.fromPath(contentPath).remove();
-    }
-    
-    startDownloadingBookJob(bookId: string): Observable<DownloadJobStatus> {
-        const downloadJob = {
-            executeSequential: true,
-            jobName: 'Jobname_123456',
-            requests: testContentList.map((src) => {
-                const req = new DownloadRequest(src.url, getPathForBookLocalUri(bookId, src.localUri));
-                //req.setNotification('Harry Potter: Fangen fra Azkaban', 'LYT3');
-                req.allowedOverMetered = true;
-                return req;
-            }),
-        };
-        return this.jobMan.startDownloadJob(downloadJob);
-    }
-    
-    startDownloadingBook(bookId: string): Observable<DownloadStatus> {
-        return Observable.from(testContentList).concatMap((src) => {
-            const req = new DownloadRequest(src.url, getPathForBookLocalUri(bookId, src.localUri));
-            req.setNotification('Harry Potter: Fangen fra Azkaban', 'LYT3');
-            req.allowedOverMetered = true;
-            return this.man.downloadFile(req);
-        }).do(null, null, () => {
-            markBookFullyDownloaded(bookId);
-        });
-    }
-    
-    hasBookMetadata(bookId: string): boolean {
-        return fs.File.exists(fs.path.join(getBookFolderPath(bookId), BookMetadataFileName));
-    }
-    
-    loadBookMetadata(bookId: string): Promise<any> {
-        if (!this.hasBookMetadata(bookId)) {
-            return Promise.reject('Cannot load metadata. File does not exist');
-        } else {
-            const metaPath = fs.path.join(getBookFolderPath(bookId), BookMetadataFileName);
-            const metaFile = fs.File.fromPath(metaPath);
-            return fs.File.fromPath(metaPath).readText().then((text) => JSON.parse(text));
-        }
-    }
-    
-    storeBookMetadata(bookId: string, bookMetadata: any): Promise<any> {
-        const metaPath = fs.path.join(getBookFolderPath(bookId), BookMetadataFileName);
-        const metaFile = fs.File.fromPath(metaPath);
-        return metaFile.writeText(JSON.stringify(bookMetadata));
-    }
-    
-    hasFullyDownloadedBook(bookId: string) {
-        return fs.File.exists(fs.path.join(getBookFolderPath(bookId), MagicFullyDownloadedFileName));
-    }
-    
-    getProgressObserver(bookId: string) {
-        
-    }
-    
-    destroy() {
-        
-    }
+  }
+  
+  storeBookMetadata(bookId: string, bookMetadata: any): Promise<any> {
+    const metaPath = fs.path.join(this.getBookFolderPath(bookId), BookMetadataFileName);
+    const metaFile = fs.File.fromPath(metaPath);
+    return metaFile.writeText(JSON.stringify(bookMetadata));
+  }
+  
+  destroy() {
+    this.jobManager.destroy();
+  }
 }
 
 
 
-/* Private */
+/* HELPERS */
 
-function markBookFullyDownloaded(bookId: string) {
-    console.log('WRITING MAGIC FILE');
-    const magicFilePath = fs.path.join(getBookFolderPath(bookId), MagicFullyDownloadedFileName);
-    fs.File.fromPath(magicFilePath).writeText("");
+function setBookFullyDownloaded(bookId: string, fullyDownloaded: boolean): Promise<any> {
+  const magicFilePath = fs.path.join(this.getBookFolderPath(bookId), MagicFullyDownloadedFileName);
+  if (fullyDownloaded) {
+    return fs.File.fromPath(magicFilePath).writeText("").then(() => {
+      console.log(`WROTE MAGIC FILE for bookId=${bookId}`);
+    });
+  } else {
+    return fs.File.fromPath(magicFilePath).remove().then(() => {
+      console.log(`REMOVED MAGIC FILE for bookId=${bookId}`);
+    });
+  }
 }
 
 function getBookStorageFolder(): fs.Folder {
-    let extFolder = fs.knownFolders.documents();
-    if (app.android) {
-        const context: android.content.Context = app.android.context;
-        extFolder = fs.Folder.fromPath(context.getExternalFilesDir(null).getCanonicalPath());
-    }
-    return extFolder.getFolder(BookStorageFolderName);
-}
-
-function getBookFolderPath(bookId: string): string {
-    return fs.path.join(getBookStorageFolder().path, bookId);
-}
-
-function getPathForBookLocalUri(bookId: string, localUri: string) {
-    return fs.path.join(getBookFolderPath(bookId), BookContentFolderName, localUri);
+  let extFolder = fs.knownFolders.documents();
+  if (app.android) {
+    const context: android.content.Context = app.android.context;
+    extFolder = fs.Folder.fromPath(context.getExternalFilesDir(null).getCanonicalPath());
+  }
+  return extFolder.getFolder(BookStorageFolderName);
 }
 
 function traceFolderTree(folder: fs.Folder, maxDepth: number = 3, depth: number = 0) {
-    let whitespace = new Array(depth + 1).join('  ');
-    console.log(`${whitespace}${folder.name}`);
-    folder.eachEntity((ent) => {
-        if (fs.Folder.exists(ent.path) && depth < maxDepth) {
-            traceFolderTree(fs.Folder.fromPath(ent.path), maxDepth, depth + 1);
-        } else {
-            console.log(`${whitespace}- ${ent.name}`);
-        }
-        return true;
-    });
+  let whitespace = new Array(depth + 1).join('  ');
+  console.log(`${whitespace}${folder.name}`);
+  folder.eachEntity((ent) => {
+    if (fs.Folder.exists(ent.path) && depth < maxDepth) {
+      traceFolderTree(fs.Folder.fromPath(ent.path), maxDepth, depth + 1);
+    } else {
+      console.log(`${whitespace}- ${ent.name}`);
+    }
+    return true;
+  });
 }
