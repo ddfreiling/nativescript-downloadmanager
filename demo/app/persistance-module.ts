@@ -42,7 +42,7 @@ export class PersistanceModule {
   /* DEBUG */
   
   debugPrintStorageFolder() {
-    const bookFolder = getBookStorageFolder();
+    const bookFolder = this.getBookStorageFolder();
     console.log('Folder: '+ bookFolder.path);
     traceFolderTree(bookFolder);
   }
@@ -52,7 +52,7 @@ export class PersistanceModule {
   }
 
   getBookFolderPath(bookId: string): string {
-    return fs.path.join(getBookStorageFolder().path, bookId);
+    return fs.path.join(this.getBookStorageFolder().path, bookId);
   }
 
   getBookLocalUriPath(bookId: string, localUri: string) {
@@ -127,6 +127,10 @@ export class PersistanceModule {
   destroy() {
     this.jobManager.destroy();
   }
+
+  private getBookStorageFolder(): fs.Folder {
+    return fs.Folder.fromPath(this.jobManager.getExternalFilesDirPath());
+  }
 }
 
 
@@ -144,15 +148,6 @@ function setBookFullyDownloaded(bookId: string, fullyDownloaded: boolean): Promi
       console.log(`REMOVED MAGIC FILE for bookId=${bookId}`);
     });
   }
-}
-
-function getBookStorageFolder(): fs.Folder {
-  let extFolder = fs.knownFolders.documents();
-  if (app.android) {
-    const context: android.content.Context = app.android.context;
-    extFolder = fs.Folder.fromPath(context.getExternalFilesDir(null).getCanonicalPath());
-  }
-  return extFolder.getFolder(BookStorageFolderName);
 }
 
 function traceFolderTree(folder: fs.Folder, maxDepth: number = 3, depth: number = 0) {

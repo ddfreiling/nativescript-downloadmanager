@@ -4,6 +4,7 @@ import {HelloWorldModel} from './main-view-model';
 
 import { Observable } from 'rxjs/Observable';
 
+import http = require('http');
 import fs = require("file-system");
 
 import {DownloadManager, DownloadRequest, DownloadStatus} from '@nota/nativescript-downloadmanager';
@@ -127,14 +128,18 @@ export function onDownload() {
   
   const req = new DownloadRequest(downloadUrl, extPath);
   req.allowedOverMetered = true;
-  const refId = man.downloadFile(req);
-  Observable.interval(1000).map(() => man.getDownloadStatus(refId))
-      .takeWhile((status) => man.isInProgress(status.state)).subscribe((next) => {
-    console.log(`Progress: ${next.refId} > ${next.bytesDownloaded} / ${next.bytesTotal} (${Math.round(next.bytesDownloaded / next.bytesTotal * 100)})`);
-  }, (err) => {
-    console.log('Error! '+ err);
-  }, () => {
-    console.log('Completed!');
+  man.downloadFile(req).then((refId) => {
+    console.log('== START OBS ==');
+    Observable.interval(1000).map(() => man.getDownloadStatus(refId))
+        .takeWhile((status) => man.isInProgress(status.state)).subscribe((next) => {
+      console.log(`Progress: ${next.refId} > ${next.bytesDownloaded} / ${next.bytesTotal} (${Math.round(next.bytesDownloaded / next.bytesTotal * 100)}%)`);
+    }, (err) => {
+      console.log('Error! '+ err);
+    }, () => {
+      console.log('Completed!');
+    });
+  }).catch((err) => {
+    console.log('downloadFile error: '+ err);
   });
 }
 
