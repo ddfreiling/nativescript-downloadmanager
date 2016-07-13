@@ -1,7 +1,7 @@
 export class DownloadRequest {
   url: string;
   destinationLocalUri: string;
-  extraHeaders: { [key:string]: string } = {};
+  extraHeaders: { [key: string]: string } = {};
   allowedOverMetered: boolean = false;
   showNotification: boolean = false;
   notificationTitle: string;

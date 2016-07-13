@@ -30,20 +30,11 @@ export class DownloadManager extends Common {
     this.twr = TWRDownloadManager.sharedManager();
   }
 
-  private getFilePathParts(filePath): any {
-    const lastSlashIndex = filePath.lastIndexOf('/');
-    const directory = filePath.substr(0, lastSlashIndex);
-    const filename = filePath.substr(lastSlashIndex + 1);
-    console.log('dir: '+ directory);
-    console.log('filename: '+ filename);
-    return { directory, filename };
-  }
-
   downloadFile(request: DownloadRequest): Promise<number> {
     const destPath = request.destinationLocalUri;
     const tempFolder: fs.Folder = fs.knownFolders.temp();
     const tempOffsetIndex = destPath.indexOf(tempFolder.path);
-    if (tempOffsetIndex == -1) {
+    if (tempOffsetIndex === -1) {
       return Promise.reject('Download destination cannot be outside temp/cache directory on iOS');
     }
     if (fs.File.exists(request.destinationLocalUri)) {
@@ -53,7 +44,7 @@ export class DownloadManager extends Common {
     const directoryPath = request.destinationLocalUri.substr(0, lastSlashIndex);
     const destFilename = request.destinationLocalUri.substr(lastSlashIndex + 1);
     const relativeDirectoryPath = directoryPath.replace(tempFolder.path, '');
-    
+
     if (!fs.Folder.exists(directoryPath)) {
       console.log('Folder does not exist!');
       // Implicitly creates folder when using .fromPath
@@ -62,7 +53,6 @@ export class DownloadManager extends Common {
     const refId = this.getNewRefId();
     console.log(`Submit download with refId=${refId}, url=${request.url} destFolder=${relativeDirectoryPath}, destFilename=${destFilename}`);
     return this.getUrlContentLength(request.url).then((contentLength) => {
-      console.log('Got content-length: '+ contentLength);
       const task = {
         refId: refId,
         request: request,
@@ -73,10 +63,10 @@ export class DownloadManager extends Common {
       };
       this.twr.downloadFileForURLWithNameInDirectoryNamedProgressBlockCompletionBlockEnableBackgroundMode(
           request.url, destFilename, relativeDirectoryPath, (progress: number) => {
-        //console.log(`Progress: refId=${refId} url=${request.url} percent=${Math.round(progress * 100)}%`);
+        // console.log(`Progress: refId=${refId} url=${request.url} percent=${Math.round(progress * 100)}%`);
         task.progress = progress;
       }, (success: boolean) => {
-        //console.log(`Download complete. refId=${refId} url=${request.url} success=${success}`);
+        // console.log(`Download complete. refId=${refId} url=${request.url} success=${success}`);
         if (success) {
           task.progress = 1;
         }
@@ -110,7 +100,7 @@ export class DownloadManager extends Common {
         localUri: task.request.destinationLocalUri,
         state: task.state,
         reason: task.reason
-      }
+      };
     }
     return null;
   }

@@ -5,7 +5,7 @@ import { DownloadManager, DownloadRequest, DownloadState, DownloadStatus } from 
 export abstract class Common implements DownloadManager {
 
   isInProgress(state: DownloadState): boolean {
-    return (state != DownloadState.FAILED && state != DownloadState.SUCCESFUL);
+    return (state !== DownloadState.FAILED && state !== DownloadState.SUCCESFUL);
   }
 
   getDownloadState(refId: number): DownloadState {

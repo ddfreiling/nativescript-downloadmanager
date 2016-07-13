@@ -62,12 +62,12 @@ export class DownloadManager extends Common {
       const refId = this.downloadManager.enqueue(req);
       console.log('Request refId: ' + refId);
       return Promise.resolve(refId);
-    } catch(ex) {
+    } catch (ex) {
       console.log('DownloadManager exception: ' + ex);
-      return Promise.reject(`Exception: ${ex}`)
+      return Promise.reject(`Exception: ${ex}`);
     }
   }
-  
+
   cancelDownloads(...refIds: number[]) {
     this.downloadManager.remove(refIds);
   }
@@ -135,7 +135,7 @@ function getCursorLong(cursor: android.database.ICursor, colIndex: string): numb
 }
 
 function getCursorString(cursor: android.database.ICursor, colIndex: string): string {
-  return cursor.getString(cursor.getColumnIndex(colIndex))
+  return cursor.getString(cursor.getColumnIndex(colIndex));
 }
 
 function getDownloadInfoLong(manager: android.app.DownloadManager, refId: number, colName: string): number {
