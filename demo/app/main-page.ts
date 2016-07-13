@@ -32,6 +32,7 @@ export function onShowStoredFiles() {
 
 export function onDownloadBook() {
   mod.deleteBookContents(bookId).then(() => {
+    console.log('deleted old book contents');
     mod.startDownloadingBook(bookId).subscribe((next) => {
       if (next.bytesTotal > 0) {
         const percent = Math.round(next.bytesDownloaded / next.bytesTotal * 100);

@@ -159,21 +159,23 @@ export class DownloadJobManager extends DownloadManager {
       //this.getJobTotalBytes(job).subscribe((bytesTotal) => {
         //job.status.bytesTotal = Math.max(bytesTotal, job.status.bytesTotal);
         //console.log('jobTotal: '+ bytesTotal);
-
+        console.log('BUILD QUEUE');
         let requestQueueObs = Observable.from(job.getRequestQueue()).concatMap((req) => {
           console.log('==== CONTINUE ===');
-          const refId = this.downloadFile(req);
-          console.log(`_job-continue refId=${refId}, url=${req.url}`);
-          console.log(`_job-completed ${JSON.stringify(job.status.downloadsCompletedRefIds)}`);
-          job.status.currentDownloadRefId = refId;
-          this.runningJobs.updateJob(job);
-          return this.getDownloadStatusObservable(refId);
+          return Observable.fromPromise(this.downloadFile(req)).flatMap((refId) => {
+            console.log(`_job-continue refId=${refId}, url=${req.url}`);
+            console.log(`_job-completed ${JSON.stringify(job.status.downloadsCompletedRefIds)}`);
+            job.status.currentDownloadRefId = refId;
+            this.runningJobs.updateJob(job);
+            return this.getDownloadStatusObservable(refId);
+          });
         });
         if (job.status.currentDownloadRefId > -1) {
           // If resuming, concat current download with queue
           console.log('CONCAT');
           requestQueueObs = this.getDownloadStatusObservable(job.status.currentDownloadRefId).concat(requestQueueObs);
         }
+        console.log('SUB TO QUEUE');
         this.subscribeToJobStatus(job, requestQueueObs, jobObserver);
       });
     //});

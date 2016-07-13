@@ -16,10 +16,10 @@ const MagicFullyDownloadedFileName = 'fully_downloaded';
 
 // mocked list of URIs from book contentlist
 const testContentList = [
-  { url: 'http://ipv4.download.thinkbroadband.com/200MB.zip', localUri: '1.mp3' },
-  { url: 'http://ipv4.download.thinkbroadband.com/200MB.zip', localUri: '2.mp3' },
-  { url: 'http://ipv4.download.thinkbroadband.com/200MB.zip', localUri: '3.mp3' },
-  { url: 'http://ipv4.download.thinkbroadband.com/200MB.zip', localUri: '4.mp3' },
+  { url: 'http://ipv4.download.thinkbroadband.com/10MB.zip', localUri: '1.mp3' },
+  { url: 'http://ipv4.download.thinkbroadband.com/10MB.zip', localUri: '2.mp3' },
+  { url: 'http://ipv4.download.thinkbroadband.com/10MB.zip', localUri: '3.mp3' },
+  { url: 'http://ipv4.download.thinkbroadband.com/10MB.zip', localUri: '4.mp3' },
   // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '5.mp3' },
   // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '6.mp3' },
   // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '7.mp3' },
@@ -70,10 +70,15 @@ export class PersistanceModule {
   }
   
   deleteBookContents(bookId: string): Promise<any> {
+    console.log('delete book contents: '+ bookId);
     this.jobManager.deleteJob(bookId);
     const contentPath = fs.path.join(this.getBookFolderPath(bookId), BookContentFolderName);
     return fs.Folder.fromPath(contentPath).remove().then(() => {
-      return setBookFullyDownloaded(bookId, false);
+      console.log('set fully downloaded = false');
+      return this.setBookFullyDownloaded(bookId, false).then(() => {
+        console.log('set fully done');
+        return true;
+      });
     });
   }
 
@@ -87,14 +92,14 @@ export class PersistanceModule {
     }));
     this.jobManager.submitJob(downloadJob);
     return this.jobManager.getJobStatus(bookId).do(null, null, () => {
-      setBookFullyDownloaded(bookId, true);
+      this.setBookFullyDownloaded(bookId, true);
     });
   }
   
   resumeDownloadingBook(bookId: string): Observable<DownloadJobStatus> {
     console.log(`---> resume downloadjob for bookId ${bookId}`);
     return this.jobManager.getJobStatus(bookId).do(null, null, () => {
-      setBookFullyDownloaded(bookId, true);
+      this.setBookFullyDownloaded(bookId, true);
     });
   }
   
@@ -131,24 +136,25 @@ export class PersistanceModule {
   private getBookStorageFolder(): fs.Folder {
     return fs.Folder.fromPath(this.jobManager.getExternalFilesDirPath());
   }
+
+  private setBookFullyDownloaded(bookId: string, fullyDownloaded: boolean): Promise<any> {
+    const magicFilePath = fs.path.join(this.getBookFolderPath(bookId), MagicFullyDownloadedFileName);
+    if (fullyDownloaded) {
+      return fs.File.fromPath(magicFilePath).writeText("").then(() => {
+        console.log(`WROTE MAGIC FILE for bookId=${bookId}`);
+      });
+    } else {
+      return fs.File.fromPath(magicFilePath).remove().then(() => {
+        console.log(`REMOVED MAGIC FILE for bookId=${bookId}`);
+      });
+    }
+  }
 }
 
 
 
 /* HELPERS */
 
-function setBookFullyDownloaded(bookId: string, fullyDownloaded: boolean): Promise<any> {
-  const magicFilePath = fs.path.join(this.getBookFolderPath(bookId), MagicFullyDownloadedFileName);
-  if (fullyDownloaded) {
-    return fs.File.fromPath(magicFilePath).writeText("").then(() => {
-      console.log(`WROTE MAGIC FILE for bookId=${bookId}`);
-    });
-  } else {
-    return fs.File.fromPath(magicFilePath).remove().then(() => {
-      console.log(`REMOVED MAGIC FILE for bookId=${bookId}`);
-    });
-  }
-}
 
 function traceFolderTree(folder: fs.Folder, maxDepth: number = 3, depth: number = 0) {
   let whitespace = new Array(depth + 1).join('  ');
