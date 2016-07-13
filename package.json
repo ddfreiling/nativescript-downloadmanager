@@ -15,8 +15,10 @@
     "demo.ios": "npm run preparedemo && cd demo && tns emulate ios",
     "demo.android": "npm run preparedemo && cd demo && tns run android",
     "reload": "cd demo && tns plugin remove @nota/nativescript-downloadmanager && tns plugin add .. && tns install",
+    "reload.sync.ios": "npm run preparedemo && cd demo && tns livesync ios",
     "preparedemo": "npm run build && npm run reload",
-    "setup": "cd demo && npm install && cd .. && npm run build && cd demo && tns plugin add .. && cd .."
+    "setup": "cd demo && npm install && cd .. && npm run build && cd demo && tns plugin add .. && cd ..",
+    "gen.typings.ios": "cd demo && TNS_TYPESCRIPT_DECLARATIONS_PATH=\"$(pwd)/../gen-typings\" tns build ios"
   },
   "repository": {
     "type": "git",
