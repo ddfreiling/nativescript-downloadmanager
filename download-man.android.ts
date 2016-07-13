@@ -40,10 +40,10 @@ export class DownloadManager extends Common {
     return getDownloadIdsByStatus(this.downloadManager, getInProgressStatusFlag());
   }
 
-  downloadFile(request: DownloadRequest): number {
+  downloadFile(request: DownloadRequest): Promise<number> {
     try {
       const uri = android.net.Uri.parse(request.url);
-      const localUri = android.net.Uri.fromFile(new java.io.File(request.toLocalUri));
+      const localUri = android.net.Uri.fromFile(new java.io.File(request.destinationLocalUri));
       console.log(`Destination: ${localUri}`);
       console.log(`ShowNoticicaiton: ${request.showNotification}`);
       const req = new android.app.DownloadManager.Request(android.net.Uri.parse(request.url));
@@ -61,9 +61,10 @@ export class DownloadManager extends Common {
       req.setDestinationUri(localUri);
       const refId = this.downloadManager.enqueue(req);
       console.log('Request refId: ' + refId);
-      return refId;
+      return Promise.resolve(refId);
     } catch(ex) {
       console.log('DownloadManager exception: ' + ex);
+      return Promise.reject(`Exception: ${ex}`)
     }
   }
   
