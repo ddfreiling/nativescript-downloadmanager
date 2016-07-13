@@ -1,6 +1,5 @@
 import * as fs from 'file-system';
 import * as http from 'http';
-import { Observable } from 'rxjs/Observable';
 
 import {Common} from './download-man.common';
 import {DownloadRequest, DownloadState, DownloadStatus} from './download-man.types';

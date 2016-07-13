@@ -1,9 +1,6 @@
 import app = require("application");
 import platform = require("platform");
 
-import {Observable} from 'rxjs/Observable';
-import {Observer} from 'rxjs/Observer';
-
 import {Common} from './download-man.common';
 import {DownloadRequest, DownloadState, DownloadStatus} from './download-man.types';
 export * from './download-man.types';
