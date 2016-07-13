@@ -17,9 +17,9 @@ const MagicFullyDownloadedFileName = 'fully_downloaded';
 // mocked list of URIs from book contentlist
 const testContentList = [
   { url: 'http://ipv4.download.thinkbroadband.com/10MB.zip', localUri: '1.mp3' },
-  { url: 'http://ipv4.download.thinkbroadband.com/10MB.zip', localUri: '2.mp3' },
-  { url: 'http://ipv4.download.thinkbroadband.com/10MB.zip', localUri: '3.mp3' },
-  { url: 'http://ipv4.download.thinkbroadband.com/10MB.zip', localUri: '4.mp3' },
+  { url: 'http://ipv4.download.thinkbroadband.com/20MB.zip', localUri: '2.mp3' },
+  { url: 'http://ipv4.download.thinkbroadband.com/50MB.zip', localUri: '3.mp3' },
+  { url: 'http://ipv4.download.thinkbroadband.com/100MB.zip', localUri: 'some/deep/folder/4.mp3' },
   // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '5.mp3' },
   // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '6.mp3' },
   // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '7.mp3' },
@@ -156,7 +156,7 @@ export class PersistanceModule {
 /* HELPERS */
 
 
-function traceFolderTree(folder: fs.Folder, maxDepth: number = 3, depth: number = 0) {
+function traceFolderTree(folder: fs.Folder, maxDepth: number = 5, depth: number = 0) {
   let whitespace = new Array(depth + 1).join('  ');
   console.log(`${whitespace}${folder.name}`);
   folder.eachEntity((ent) => {
