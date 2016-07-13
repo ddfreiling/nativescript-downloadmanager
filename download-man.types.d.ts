@@ -1,6 +1,6 @@
 export declare class DownloadRequest {
     url: string;
-    toLocalUri: string;
+    destinationLocalUri: string;
     extraHeaders: {
         [key: string]: string;
     };
@@ -8,7 +8,7 @@ export declare class DownloadRequest {
     showNotification: boolean;
     notificationTitle: string;
     notificationDescription: string;
-    constructor(url: string, toLocalUri: string);
+    constructor(url: string, destinationLocalUri: string);
     setNotification(title: string, description: string): void;
     addHeader(name: string, value: string): void;
 }
@@ -30,7 +30,7 @@ export interface DownloadStatus {
     reason: string;
 }
 export declare class DownloadManager {
-    downloadFile(request: DownloadRequest): number;
+    downloadFile(request: DownloadRequest): Promise<number>;
     isDownloadInProgress(refId: number): boolean;
     isInProgress(state: DownloadState): boolean;
     getDownloadsInProgress(): number[];

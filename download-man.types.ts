@@ -1,17 +1,15 @@
-import { Observable } from 'rxjs/Observable';
-
 export class DownloadRequest {
   url: string;
-  toLocalUri: string;
+  destinationLocalUri: string;
   extraHeaders: { [key:string]: string } = {};
   allowedOverMetered: boolean = false;
   showNotification: boolean = false;
   notificationTitle: string;
   notificationDescription: string;
 
-  constructor(url: string, toLocalUri: string) {
+  constructor(url: string, destinationLocalUri: string) {
     this.url = url;
-    this.toLocalUri = toLocalUri;
+    this.destinationLocalUri = destinationLocalUri;
   }
 
   setNotification(title: string, description: string): void {
@@ -45,7 +43,7 @@ export interface DownloadStatus {
 }
 
 export declare class DownloadManager {
-  downloadFile(request: DownloadRequest): number;
+  downloadFile(request: DownloadRequest): Promise<number>;
   isDownloadInProgress(refId: number): boolean;
   isInProgress(state: DownloadState): boolean;
   getDownloadsInProgress(): number[];
