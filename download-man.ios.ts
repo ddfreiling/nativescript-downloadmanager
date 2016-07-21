@@ -126,9 +126,7 @@ export class DownloadManager extends Common {
 
   isDownloadInProgress(refId: number): boolean {
     const task = this.currentTasks[refId];
-    if (task) {
-      return this.twr.isFileDownloadingForUrlWithProgressBlock(task.request.url, () => {});
-    }
+    return task && this.twr.isFileDownloadingForUrlWithProgressBlock(task.request.url, () => {});
   }
 
   getDownloadStatus(refId: number): DownloadStatus {
