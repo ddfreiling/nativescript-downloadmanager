@@ -1,5 +1,6 @@
 import * as fs from 'file-system';
 import * as http from 'http';
+import * as appSettings from 'application-settings';
 
 import {Common} from './download-man.common';
 import {DownloadRequest, DownloadState, DownloadStatus} from './download-man.types';
@@ -14,19 +15,62 @@ interface DownloadTask {
   reason: string;
 }
 
+const DOWNLOADMANAGER_PERSISTANCE_KEY = 'TNS_NOTA_DOWNLOADMANAGER_IOS';
+
 // TODO: Cannot add extraHeaders on iOS
 // TODO: Cannot control whether downloads are allowed over metered connection. Wifi-only atm.
-// TODO: Download tasks do not persist after app termination on iOS.
-//       Killing the app effectively kills the current download.
 export class DownloadManager extends Common {
 
   private session: NSURLSession;
   private twr: TWRDownloadManager;
-  private currentTasks: { [refId: string]: DownloadTask } = {};
+  private currentTasks: { [refId: number]: DownloadTask } = {};
 
   constructor() {
     super();
     this.twr = TWRDownloadManager.sharedManager();
+    this.loadPersistedTasks();
+    this.resumeTaskProgressTracking();
+  }
+
+  private persistCurrentTasks() {
+    appSettings.setString(DOWNLOADMANAGER_PERSISTANCE_KEY, JSON.stringify(this.currentTasks));
+  }
+
+  private loadPersistedTasks() {
+    this.currentTasks = JSON.parse(appSettings.getString(DOWNLOADMANAGER_PERSISTANCE_KEY, '{}'));
+    console.log('- downloadman tasks: '+ JSON.stringify(this.currentTasks));
+  }
+
+  private updateTaskProgress(refId: number, progress: number, state: DownloadState) {
+    const task = this.currentTasks[refId];
+    if (task) {
+      task.progress = progress;
+      task.state = state;
+    }
+  }
+
+  private resumeTaskProgressTracking() {
+    const urls: string[] = this.twr.currentDownloads();
+    console.log('== Current Downloads, according to TWR: '+ JSON.stringify(urls));
+    for (const refId of Object.keys(this.currentTasks)) {
+      const task: DownloadTask = this.currentTasks[refId];
+      
+      if (this.isInProgress(task.state) && urls.some((url) => task.request.url === url)) {
+        // Restart tracking of download progress
+        const isDownloading = this.twr.isFileDownloadingForUrlWithProgressBlockCompletionBlock(task.request.url, (progress) => {
+          this.updateTaskProgress(+refId, progress, DownloadState.RUNNING);
+        }, (success) => {
+          this.updateTaskProgress(+refId, 1, success ? DownloadState.SUCCESFUL: DownloadState.FAILED);
+        });
+        if (!isDownloading) {
+          console.log('TWR reports that we are in fact NOT downloading url: '+ task.request.url);
+          delete this.currentTasks[refId];
+        }
+      } else {
+        // Download no longer active or in a usable state, delete it.
+        delete this.currentTasks[refId];
+      }
+    }
   }
 
   downloadFile(request: DownloadRequest): Promise<number> {
@@ -145,6 +189,7 @@ export class DownloadManager extends Common {
   }
 
   destroy(): void {
+    this.persistCurrentTasks();
     this.twr.dealloc();
     this.twr = null;
     this.currentTasks = null;
