@@ -114,6 +114,12 @@ export class DownloadManager extends Common {
     return fs.knownFolders.temp().path;
   }
 
+  getSizeOfFile(localFilePath: string): number {
+    const dict = NSFileManager.defaultManager().attributesOfItemAtPathError(localFilePath);
+    const fileSize = dict.valueForKey(NSFileSize);
+    return fileSize ? fileSize.longValue : 0;
+  }
+
   cancelDownloads(...refIds: number[]): void {
     const urls = refIds
       .map((refId) => this.currentTasks[refId])

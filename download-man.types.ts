@@ -52,5 +52,6 @@ export declare class DownloadManager {
   cancelDownloads(...refIds: number[]): void;
   cancelAllDownloads(): void;
   getExternalFilesDirPath(): string;
+  getSizeOfFile(localFilePath: string): number;
   destroy(): void;
 }

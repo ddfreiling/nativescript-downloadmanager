@@ -24,6 +24,10 @@ export class DownloadManager extends Common {
     return getAndroidAppContext().getExternalFilesDir(null).getCanonicalPath();
   }
 
+  getSizeOfFile(localFilePath: string): number {
+    return new java.io.File(localFilePath).length();
+  }
+
   getDownloadState(refId: number): DownloadState {
     const status = getDownloadInfoLong(this.downloadManager, refId, android.app.DownloadManager.COLUMN_STATUS);
     return DownloadState[DownloadState[status]];
