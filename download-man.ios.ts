@@ -102,6 +102,16 @@ export class DownloadManager extends Common {
       };
     }
     return null;
+    // return {
+    //   refId: refId,
+    //   title: 'unkown-download',
+    //   downloadUri: '',
+    //   bytesDownloaded: 0,
+    //   bytesTotal: 1,
+    //   localUri: '',
+    //   state: DownloadState.FAILED,
+    //   reason: 'Unknown refId. Or failed from shutting down iOS app'
+    // };
   }
 
   getDownloadsInProgress(): number[] {
