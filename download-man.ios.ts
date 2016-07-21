@@ -38,7 +38,6 @@ export class DownloadManager extends Common {
 
   private loadPersistedTasks() {
     this.currentTasks = JSON.parse(appSettings.getString(DOWNLOADMANAGER_PERSISTANCE_KEY, '{}'));
-    console.log('- downloadman tasks: '+ JSON.stringify(this.currentTasks));
   }
 
   private updateTaskProgress(refId: number, progress: number, state: DownloadState) {
@@ -50,20 +49,21 @@ export class DownloadManager extends Common {
   }
 
   private resumeTaskProgressTracking() {
-    const urls: string[] = this.twr.currentDownloads();
-    console.log('== Current Downloads, according to TWR: '+ JSON.stringify(urls));
-    for (const refId of Object.keys(this.currentTasks)) {
+    const refIds: number[] = this.getDownloadsInProgress();
+    console.log('== Current Download refIds, according to TWR: '+ JSON.stringify(refIds));
+    for (const key of Object.keys(this.currentTasks)) {
+      const refId: number = +key;
       const task: DownloadTask = this.currentTasks[refId];
       
-      if (this.isInProgress(task.state) && urls.some((url) => task.request.url === url)) {
+      if (this.isInProgress(task.state) && refIds.some((refId) => task.refId === refId)) {
         // Restart tracking of download progress
         const isDownloading = this.twr.isFileDownloadingForUrlWithProgressBlockCompletionBlock(task.request.url, (progress) => {
-          this.updateTaskProgress(+refId, progress, DownloadState.RUNNING);
+          this.updateTaskProgress(refId, progress, DownloadState.RUNNING);
         }, (success) => {
-          this.updateTaskProgress(+refId, 1, success ? DownloadState.SUCCESFUL: DownloadState.FAILED);
+          this.updateTaskProgress(refId, 1, success ? DownloadState.SUCCESFUL: DownloadState.FAILED);
         });
         if (!isDownloading) {
-          console.log('TWR reports that we are in fact NOT downloading url: '+ task.request.url);
+          console.log('TWRDownloadManager reports we are NOT downloading url: '+ task.request.url);
           delete this.currentTasks[refId];
         }
       } else {
@@ -78,10 +78,12 @@ export class DownloadManager extends Common {
     const tempFolder: fs.Folder = fs.knownFolders.temp();
     const tempOffsetIndex = destPath.indexOf(tempFolder.path);
     if (tempOffsetIndex === -1) {
-      return Promise.reject('Download destination cannot be outside temp/cache directory on iOS');
+      return Promise.reject('Download destination cannot be outside temp/cache directory on iOS.');
     }
     if (fs.File.exists(request.destinationLocalUri)) {
-      return Promise.reject('Download destination already exists');
+      fs.File.fromPath(request.destinationLocalUri).removeSync((err) => {
+        return Promise.reject(`Download destination already exists and could not remove existing file. ${err}`);
+      });
     }
     const lastSlashIndex = request.destinationLocalUri.lastIndexOf('/');
     const directoryPath = request.destinationLocalUri.substr(0, lastSlashIndex);
@@ -90,10 +92,10 @@ export class DownloadManager extends Common {
 
     if (!fs.Folder.exists(directoryPath)) {
       console.log('Folder does not exist!');
-      // Implicitly creates folder when using .fromPath
+      // Implicitly creates folder when using Folder.fromPath
       fs.Folder.fromPath(directoryPath);
     }
-    const refId = this.getNewRefId();
+    const refId: number = this.getNewRefId();
     console.log(`Submit download with refId=${refId}, url=${request.url} destFolder=${relativeDirectoryPath}, destFilename=${destFilename}`);
     return this.getUrlContentLength(request.url).then((contentLength) => {
       const task = {
@@ -107,13 +109,10 @@ export class DownloadManager extends Common {
       this.twr.downloadFileForURLWithNameInDirectoryNamedProgressBlockCompletionBlockEnableBackgroundMode(
           request.url, destFilename, relativeDirectoryPath, (progress: number) => {
         // console.log(`Progress: refId=${refId} url=${request.url} percent=${Math.round(progress * 100)}%`);
-        task.progress = progress;
+        this.updateTaskProgress(refId, progress, DownloadState.RUNNING);
       }, (success: boolean) => {
         // console.log(`Download complete. refId=${refId} url=${request.url} success=${success}`);
-        if (success) {
-          task.progress = 1;
-        }
-        task.state = success ? DownloadState.SUCCESFUL : DownloadState.FAILED;
+        this.updateTaskProgress(refId, 1, success ? DownloadState.SUCCESFUL : DownloadState.FAILED);
       }, true);
       this.currentTasks[refId] = task;
       return refId;
@@ -132,7 +131,7 @@ export class DownloadManager extends Common {
   getDownloadStatus(refId: number): DownloadStatus {
     const task = this.currentTasks[refId];
     if (task) {
-      return {
+      const status = {
         refId: task.refId,
         title: task.request.url,
         downloadUri: task.request.url,
@@ -142,18 +141,13 @@ export class DownloadManager extends Common {
         state: task.state,
         reason: task.reason
       };
+      if (!this.isInProgress(status.state)) {
+        // Download finished, remove it from current tasks
+        delete this.currentTasks[task.refId];
+      }
+      return status;
     }
     return null;
-    // return {
-    //   refId: refId,
-    //   title: 'unkown-download',
-    //   downloadUri: '',
-    //   bytesDownloaded: 0,
-    //   bytesTotal: 1,
-    //   localUri: '',
-    //   state: DownloadState.FAILED,
-    //   reason: 'Unknown refId. Or failed from shutting down iOS app'
-    // };
   }
 
   getDownloadsInProgress(): number[] {
