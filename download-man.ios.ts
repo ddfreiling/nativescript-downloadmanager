@@ -49,13 +49,13 @@ export class DownloadManager extends Common {
   }
 
   private resumeTaskProgressTracking() {
-    const refIds: number[] = this.getDownloadsInProgress();
-    console.log('== Current Download refIds, according to TWR: '+ JSON.stringify(refIds));
+    //const refIds: number[] = this.getDownloadsInProgress();
+    //console.log('== Current Download refIds, according to TWR: '+ JSON.stringify(refIds));
     for (const key of Object.keys(this.currentTasks)) {
       const refId: number = +key;
       const task: DownloadTask = this.currentTasks[refId];
       
-      if (this.isInProgress(task.state) && refIds.some((refId) => task.refId === refId)) {
+      if (this.isInProgress(task.state)) {
         // Restart tracking of download progress
         const isDownloading = this.twr.isFileDownloadingForUrlWithProgressBlockCompletionBlock(task.request.url, (progress) => {
           this.updateTaskProgress(refId, progress, DownloadState.RUNNING);
@@ -141,17 +141,16 @@ export class DownloadManager extends Common {
         state: task.state,
         reason: task.reason
       };
-      if (!this.isInProgress(status.state)) {
-        // Download finished, remove it from current tasks
-        delete this.currentTasks[task.refId];
-      }
       return status;
     }
     return null;
   }
 
+  // TODO: This call seems to not work. Always get an empty object instead of array
   getDownloadsInProgress(): number[] {
-    return this.twr.currentDownloads().map((url) => this.getTaskByUrl(url).refId);
+    return [];
+    //const curDownloadingUrls = this.twr.currentDownloads();
+    //return curDownloadingUrls ? curDownloadingUrls.map((url) => this.getTaskByUrl(url).refId) : [];
   }
 
   getExternalFilesDirPath(): string {

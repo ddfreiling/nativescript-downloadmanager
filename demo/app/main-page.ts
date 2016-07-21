@@ -61,7 +61,7 @@ export function onDownloadBookJob() {
 }
 
 export function onDownloadBookResume() {
-  downloadBook(bookId);
+  mod.resumeDownloadingBook(bookId);
 }
 
 function downloadBook(bookId: string) {
