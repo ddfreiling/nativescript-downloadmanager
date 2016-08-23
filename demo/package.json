@@ -11,8 +11,8 @@
   "dependencies": {
     "@nota/nativescript-downloadmanager": "file:..",
     "rxjs": "5.0.0-beta.6",
-    "tns-core-modules": "^2.2.1",
-    "tns-platform-declarations": "^2.0.0"
+    "tns-core-modules": "~2.2.1",
+    "tns-platform-declarations": "~2.2.0"
   },
   "devDependencies": {
     "babel-traverse": "6.10.4",
