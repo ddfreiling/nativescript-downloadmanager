@@ -156,6 +156,8 @@ export class DownloadManager extends Common {
   getExternalFilesDirPath(): string {
     // temp/cache directory is where large files are stored on iOS. These will NOT be synced to iCloud.
     // see https://developer.apple.com/icloud/documentation/data-storage/index.html
+    // TODO: Should we set ExcludedFromBackup flag?
+    // see https://developer.apple.com/library/ios/qa/qa1719/_index.html
     return fs.knownFolders.temp().path;
   }
 
