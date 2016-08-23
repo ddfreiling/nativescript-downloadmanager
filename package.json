@@ -6,8 +6,8 @@
   "typings": "download-man.types.d.ts",
   "nativescript": {
     "platforms": {
-      "android": "2.0.0",
-      "ios": "2.0.1"
+      "android": "2.2.0",
+      "ios": "2.2.1"
     }
   },
   "scripts": {
