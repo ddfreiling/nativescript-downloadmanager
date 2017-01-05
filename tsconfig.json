@@ -6,7 +6,8 @@
         "experimentalDecorators": true,
         "sourceMap": true,
         "noEmitOnError": false,
-        "declaration": true
+        "declaration": true,
+        "noEmitHelpers": true
     },
     "files": [
       "demo/node_modules/tns-platform-declarations/tns-core-modules/android17.d.ts",
