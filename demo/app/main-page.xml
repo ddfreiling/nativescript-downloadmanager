@@ -10,5 +10,7 @@
     <Button text="Load" tap="onLoadMeta"></Button>
     <Button text="HasMeta?" tap="onHasMeta"></Button>
     <Button text="Download File" tap="onDownload"></Button>
+    <Button text="ShowSpace" tap="onShowSpace"></Button>
+    <Label text="{{ spaceAvailable + ' GB space' }}" textWrap="true"/>
   </StackLayout>
 </Page>

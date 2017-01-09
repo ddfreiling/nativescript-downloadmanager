@@ -3,6 +3,7 @@ import {DownloadManager} from '@nota/nativescript-downloadmanager';
 
 export class HelloWorldModel extends Observable {
   public message: string;
+  public spaceAvailable: number;
   public progress: number;
   private yourPlugin: DownloadManager;
 
@@ -11,6 +12,7 @@ export class HelloWorldModel extends Observable {
 
     this.yourPlugin = new DownloadManager();
     this.message = 'Demo app';
+    this.spaceAvailable = 0;
     this.progress = 0;
   }
 }

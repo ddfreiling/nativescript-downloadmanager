@@ -160,10 +160,13 @@ function traceFolderTree(folder: fs.Folder, maxDepth: number = 5, depth: number 
   let whitespace = new Array(depth + 1).join('  ');
   console.log(`${whitespace}${folder.name}`);
   folder.eachEntity((ent) => {
-    if (fs.Folder.exists(ent.path) && depth < maxDepth) {
-      traceFolderTree(fs.Folder.fromPath(ent.path), maxDepth, depth + 1);
-    } else {
-      console.log(`${whitespace}- ${ent.name}`);
+    try {
+      if (fs.Folder.exists(ent.path) && depth < maxDepth) {
+        traceFolderTree(fs.Folder.fromPath(ent.path), maxDepth, depth + 1);
+      } else {
+        console.log(`${whitespace}- ${ent.name}`);
+      }
+    } catch (err) {
     }
     return true;
   });

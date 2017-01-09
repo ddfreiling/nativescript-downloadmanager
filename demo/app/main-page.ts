@@ -144,6 +144,14 @@ export function onDownload() {
   });
 }
 
+export function onShowSpace() {
+  console.log('onShowSpace');
+  const res = man.getAvailableDiskSpaceInBytes();
+  const gb = res / (1024 * 1024 * 1024);
+  model.spaceAvailable = Math.round(gb * 100) / 100; //round to 2 decimals
+  model.notifyPropertyChange('spaceAvailable', model.spaceAvailable);
+}
+
 
 
 
@@ -160,7 +168,7 @@ function traceFolderTree(folder: fs.Folder, maxDepth: number = 3, depth: number 
   });
 }
 
-function traceJavaFolderTree(folder: java.io.File, maxDepth: number = 3, depth: number = 0) {
+function traceJavaFolderTree(folder: any, maxDepth: number = 3, depth: number = 0) {
   let whitespace = new Array(depth + 1).join('  ');
   console.log(`${whitespace}JavaFolder: ${folder.getCanonicalPath()}`);
   let files = folder.listFiles();
