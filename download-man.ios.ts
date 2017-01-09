@@ -183,6 +183,13 @@ export class DownloadManager extends Common {
     this.twr.cancelAllDownloads();
   }
 
+  getAvailableDiskSpaceInBytes(): number {
+    const fileMan: NSFileManager = utils.ios.getter(NSFileManager, NSFileManager.defaultManager);
+    const paths = NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory.DocumentDirectory, NSSearchPathDomainMask.UserDomainMask, true);
+    const fileSystemAttDict = fileMan.attributesOfFileSystemForPathError(paths.lastObject);
+    return fileSystemAttDict.objectForKey(NSFileSystemFreeSize);
+  }
+
   destroy(): void {
     this.persistCurrentTasks();
     this.twr.dealloc();

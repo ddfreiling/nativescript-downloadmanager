@@ -1,9 +1,15 @@
-import app = require("application");
-import platform = require("platform");
+import * as app from "application";
+import * as platform from "platform";
 
 import {Common} from './download-man.common';
 import {DownloadRequest, DownloadState, DownloadStatus} from './download-man.types';
 export * from './download-man.types';
+
+interface StatFs_API18 extends android.os.StatFs {
+  getAvailableBytes(): number;
+  getAvailableBlocksLong(): number;
+  getBlockSizeLong(): number;
+}
 
 export class DownloadManager extends Common {
 
@@ -78,6 +84,15 @@ export class DownloadManager extends Common {
 
   cancelDownloads(...refIds: number[]) {
     this.downloadManager.remove(refIds);
+  }
+
+  getAvailableDiskSpaceInBytes(): number {
+    const stats = new android.os.StatFs(this.getExternalFilesDirPath());
+    if (platform.device.sdkVersion >= "18") {
+      return (<StatFs_API18>stats).getAvailableBytes();
+    } else {
+      return stats.getAvailableBlocks() * stats.getBlockSize();
+    }
   }
 
   destroy() {

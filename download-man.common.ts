@@ -29,6 +29,7 @@ export abstract class Common implements DownloadManager {
   public abstract downloadFile(request: DownloadRequest): Promise<number>;
   public abstract getDownloadStatus(refId: number): DownloadStatus;
   public abstract cancelDownloads(...refIds: number[]);
+  public abstract getAvailableDiskSpaceInBytes(): number;
   public abstract destroy();
 }
 
