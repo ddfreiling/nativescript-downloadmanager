@@ -1,6 +1,7 @@
 import * as fs from 'file-system';
 import * as http from 'http';
 import * as appSettings from 'application-settings';
+import * as utils from 'utils/utils';
 
 import {Common} from './download-man.common';
 import {DownloadRequest, DownloadState, DownloadStatus} from './download-man.types';
@@ -162,7 +163,8 @@ export class DownloadManager extends Common {
   }
 
   getSizeOfFile(localFilePath: string): number {
-    const dict = NSFileManager.defaultManager().attributesOfItemAtPathError(localFilePath);
+    const fileMan = utils.ios.getter(NSFileManager, NSFileManager.defaultManager);
+    const dict = fileMan.attributesOfItemAtPathError(localFilePath);
     const fileSize = dict.valueForKey(NSFileSize);
     return fileSize ? fileSize.longValue : 0;
   }

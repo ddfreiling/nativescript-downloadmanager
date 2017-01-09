@@ -43,6 +43,8 @@
   "homepage": "https://github.com/dfg-nota/nativescript-downloadmanager",
   "readmeFilename": "README.md",
   "devDependencies": {
-    "typescript": "^1.8.10"
+    "tns-platform-declarations": "~2.4.4",
+    "tns-core-modules": "~2.4.4",
+    "typescript": "^2.1.4"
   }
 }

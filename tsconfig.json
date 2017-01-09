@@ -4,19 +4,21 @@
         "module": "commonjs",
         "removeComments": true,
         "experimentalDecorators": true,
-        "sourceMap": true,
+        "inlineSourceMap": true,
+        "noEmitHelpers": true,
         "noEmitOnError": false,
         "declaration": true,
-        "noEmitHelpers": true
+        "skipLibCheck": true
     },
     "files": [
-      "demo/node_modules/tns-platform-declarations/tns-core-modules/android17.d.ts",
-      "demo/node_modules/tns-platform-declarations/tns-core-modules/ios.d.ts",
-      "demo/node_modules/tns-core-modules/tns-core-modules.d.ts",
-      "TWRDownloadManager.d.ts",
       "download-man.common.ts",
       "download-man.android.ts",
-      "download-man.ios.ts"
+      "download-man.ios.ts",
+      // References
+      "node_modules/tns-platform-declarations/android/android.d.ts",
+      "node_modules/tns-platform-declarations/ios/ios.d.ts",
+      "node_modules/tns-core-modules/tns-core-modules.d.ts",
+      "TWRDownloadManager.d.ts"
     ],
     "compileOnSave": false
 }
