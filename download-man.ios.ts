@@ -126,7 +126,12 @@ export class DownloadManager extends Common {
 
   isDownloadInProgress(refId: number): boolean {
     const task = this.currentTasks[refId];
-    return task && this.twr.isFileDownloadingForUrlWithProgressBlock(task.request.url, () => {});
+    try {
+      return task && this.twr.isFileDownloadingForUrlWithProgressBlock(task.request.url, () => {});
+    } catch (err) {
+      console.log(`DownloadManager.isDownloadInProgress - Error: ${err}`);
+      return false;
+    }
   }
 
   getDownloadStatus(refId: number): DownloadStatus {
@@ -175,12 +180,20 @@ export class DownloadManager extends Common {
       .filter((task) => task && this.isInProgress(task.state))
       .map((task) => task.request.url);
     for (const url of urls) {
-      this.twr.cancelDownloadForUrl(url);
+      try {
+        this.twr.cancelDownloadForUrl(url);
+      } catch (err) {
+        console.log(`DownloadManager.cancelDownloads - Error: ${err}`);
+      }
     }
   }
 
   cancelAllDownloads(): void {
-    this.twr.cancelAllDownloads();
+    try {
+      this.twr.cancelAllDownloads();
+    } catch (err) {
+      console.log(`DownloadManager.cancelAllDownloads - Error: ${err}`);
+    }
   }
 
   getAvailableDiskSpaceInBytes(): number {
