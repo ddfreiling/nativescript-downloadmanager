@@ -2,4 +2,4 @@ platform :ios, '8.0'
 
 source 'https://github.com/CocoaPods/Specs.git'
 
-pod 'TWRDownloadManager', '~> 1.1.1'
+pod 'TWRDownloadManager', :git => 'https://github.com/ddfreiling/TWRDownloadManager', :branch => 'lyt-fixes'
