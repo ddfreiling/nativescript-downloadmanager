@@ -3,9 +3,9 @@
         "target": "es5",
         "module": "commonjs",
         "experimentalDecorators": true,
-        "inlineSourceMap": true,
         "noEmitHelpers": true,
         "noEmitOnError": false,
+        "inlineSourceMap": true,
         "declaration": true,
         "skipLibCheck": true
     },
@@ -17,7 +17,7 @@
       "node_modules/tns-platform-declarations/android/android.d.ts",
       "node_modules/tns-platform-declarations/ios/ios.d.ts",
       "node_modules/tns-core-modules/tns-core-modules.d.ts",
-      "TWRDownloadManager.d.ts"
+      "HWIFileDownload.d.ts"
     ],
     "compileOnSave": false
 }
