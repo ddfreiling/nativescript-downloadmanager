@@ -10,7 +10,6 @@ export class HelloWorldModel extends Observable {
   constructor() {
     super();
 
-    this.yourPlugin = new DownloadManager();
     this.message = 'Demo app';
     this.spaceAvailable = 0;
     this.progress = 0;

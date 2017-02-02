@@ -6,7 +6,7 @@ import { Observable } from 'rxjs/Observable';
 import { Observer } from 'rxjs/Observer';
 import 'rxjs'
 
-import { DownloadManager, DownloadRequest, DownloadStatus } from '@nota/nativescript-downloadmanager';
+import { DownloadManager, DownloadRequest, DownloadStatus, DownloadState } from '@nota/nativescript-downloadmanager';
 import { DownloadJobManager, DownloadJob, DownloadJobStatus } from './download-job-manager';
 
 const BookStorageFolderName = 'books';
@@ -16,10 +16,10 @@ const MagicFullyDownloadedFileName = 'fully_downloaded';
 
 // mocked list of URIs from book contentlist
 const testContentList = [
-  { url: 'http://ipv4.download.thinkbroadband.com/10MB.zip', localUri: '1.mp3' },
-  { url: 'http://ipv4.download.thinkbroadband.com/20MB.zip', localUri: '2.mp3' },
-  { url: 'http://ipv4.download.thinkbroadband.com/50MB.zip', localUri: '3.mp3' },
-  { url: 'http://ipv4.download.thinkbroadband.com/100MB.zip', localUri: 'some/deep/folder/4.mp3' },
+  { url: 'http://ipv4.download.thinkbroadband.com/10MB.zip', localUri: '10MB.zip' },
+  { url: 'http://ipv4.download.thinkbroadband.com/20MB.zip', localUri: '20MB.zip' },
+  { url: 'http://ipv4.download.thinkbroadband.com/50MB.zip', localUri: '50MB.zip' },
+  { url: 'http://ipv4.download.thinkbroadband.com/100MB.zip', localUri: 'some/deep/folder/4.zip' },
   // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '5.mp3' },
   // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '6.mp3' },
   // { url: 'http://ipv4.download.thinkbroadband.com/1MB.zip', localUri: '7.mp3' },
@@ -85,8 +85,9 @@ export class PersistanceModule {
   startDownloadingBook(bookId: string): Observable<DownloadJobStatus> {
     console.log(`---> start new downloadjob for bookId ${bookId}`);
     const downloadJob: DownloadJob = new DownloadJob(bookId, testContentList.map((src) => {
+      console.log(`\nDownload url: ${src.url}`);
       const req = new DownloadRequest(src.url, this.getBookLocalUriPath(bookId, src.localUri));
-      req.setNotification('Harry Potter: Fangen fra Azkaban', 'LYT3');
+      //req.setNotification('Harry Potter: Fangen fra Azkaban', 'LYT3');
       req.allowedOverMetered = true;
       return req;
     }));
@@ -128,13 +129,33 @@ export class PersistanceModule {
     const metaFile = fs.File.fromPath(metaPath);
     return metaFile.writeText(JSON.stringify(bookMetadata));
   }
+
+  downloadFile(req: DownloadRequest): Promise<number> {
+    return this.jobManager.downloadFile(req);
+  }
+
+  getExternalFilesDirPath() {
+    return this.jobManager.getExternalFilesDirPath();
+  }
+
+  getDownloadStatus(refId: number) {
+    return this.jobManager.getDownloadStatus(refId);
+  }
+
+  isInProgress(state: DownloadState) {
+    return this.jobManager.isInProgress(state);
+  }
+
+  getAvailableDiskSpaceInBytes() {
+    return this.jobManager.getAvailableDiskSpaceInBytes();
+  }
   
   destroy() {
     this.jobManager.destroy();
   }
 
   private getBookStorageFolder(): fs.Folder {
-    return fs.Folder.fromPath(this.jobManager.getExternalFilesDirPath());
+    return fs.Folder.fromPath(fs.path.join(this.jobManager.getExternalFilesDirPath(), 'books'));
   }
 
   private setBookFullyDownloaded(bookId: string, fullyDownloaded: boolean): Promise<any> {

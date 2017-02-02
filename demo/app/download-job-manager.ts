@@ -95,7 +95,7 @@ class JobStore {
 
   private persist() {
     appSettings.setString(JobStore.STORE_KEY, JSON.stringify(this.currentJobs));
-    console.log('job-store: '+ JSON.stringify(this.currentJobs));
+    //console.log('job-store: '+ JSON.stringify(this.currentJobs));
   }
 
   private load() {
@@ -152,33 +152,31 @@ export class DownloadJobManager extends DownloadManager {
 
   getJobStatus(jobName: string): Observable<DownloadJobStatus> {
     const job = this.runningJobs.getJob(jobName);
+    console.log(`DownloadJobManager: getJobStatus ${jobName}`);
     if (!job) {
+      console.log(`DownloadJobManager: no job with name ${jobName}`);
       return Observable.throw('404 - Job not found');
     }
     return Observable.create((jobObserver: Observer<DownloadJobStatus>) => {
-      //this.getJobTotalBytes(job).subscribe((bytesTotal) => {
-        //job.status.bytesTotal = Math.max(bytesTotal, job.status.bytesTotal);
-        //console.log('jobTotal: '+ bytesTotal);
-        console.log('BUILD QUEUE');
-        let requestQueueObs = Observable.from(job.getRequestQueue()).concatMap((req) => {
-          console.log('==== CONTINUE ===');
-          return Observable.fromPromise(this.downloadFile(req)).flatMap((refId) => {
-            console.log(`_job-continue refId=${refId}, url=${req.url}`);
-            console.log(`_job-completed ${JSON.stringify(job.status.downloadsCompletedRefIds)}`);
-            job.status.currentDownloadRefId = refId;
-            this.runningJobs.updateJob(job);
-            return this.getDownloadStatusObservable(refId);
-          });
+      console.log('BUILD QUEUE');
+      let requestQueueObs = Observable.from(job.getRequestQueue()).concatMap((req) => {
+        console.log('==== CONTINUE ===');
+        return Observable.fromPromise(this.downloadFile(req)).flatMap((refId) => {
+          console.log(`_job-continue refId=${refId}, url=${req.url}`);
+          console.log(`_job-completed ${JSON.stringify(job.status.downloadsCompletedRefIds)}`);
+          job.status.currentDownloadRefId = refId;
+          this.runningJobs.updateJob(job);
+          return this.getDownloadStatusObservable(refId);
         });
-        if (job.status.currentDownloadRefId > -1) {
-          // If resuming, concat current download with queue
-          console.log('CONCAT');
-          requestQueueObs = this.getDownloadStatusObservable(job.status.currentDownloadRefId).concat(requestQueueObs);
-        }
-        console.log('SUB TO QUEUE');
-        this.subscribeToJobStatus(job, requestQueueObs, jobObserver);
       });
-    //});
+      if (job.status.currentDownloadRefId > -1) {
+        // If resuming, concat current download with queue
+        console.log('CONCAT');
+        requestQueueObs = this.getDownloadStatusObservable(job.status.currentDownloadRefId).concat(requestQueueObs);
+      }
+      console.log('SUB TO QUEUE');
+      this.subscribeToJobStatus(job, requestQueueObs, jobObserver);
+    });
   }
 
   private subscribeToJobStatus(job: DownloadJob, obs: Observable<DownloadStatus>, observer: Observer<DownloadJobStatus>): void {
@@ -209,12 +207,14 @@ export class DownloadJobManager extends DownloadManager {
   }
 
   getDownloadStatusObservable(refId: number): Observable<DownloadStatus> {
+    console.log(`_getDownloadStatusObservable refId=${refId}`);
     return Observable.create((obs: Observer<DownloadStatus>) => {
       let downloadInProgress = true;
       Observable.interval(DownloadJobManager.ProgressUpdateInterval).takeWhile(() => downloadInProgress).subscribe(() => {
+        console.log('_interval refId='+ refId);
         const status = this.getDownloadStatus(refId);
-        //console.log(`_interval: refId=${status.refId}, state=${DownloadState[status.state]}`);
-        //console.log('_interval', JSON.stringify(status));
+        console.log(`_interval state=${DownloadState[status.state]}`);
+        console.log('_interval :: ', JSON.stringify(status));
         obs.next(status);
         if (status.state == DownloadState.FAILED) {
           obs.error(status.reason);
@@ -225,6 +225,10 @@ export class DownloadJobManager extends DownloadManager {
         }
       });
     });
+  }
+
+  destroy() {
+    super.destroy();
   }
   
   /**
