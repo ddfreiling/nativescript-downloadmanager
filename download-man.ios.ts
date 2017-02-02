@@ -152,7 +152,6 @@ export class DownloadManager extends Common {
 
   constructor() {
     super();
-    console.log(`DownloadManager.new`);
     this.delegate = (<HWIFileDownloadDelegateImpl>HWIFileDownloadDelegateImpl.alloc()).initWithDownloadManager(this);
     this.hwi = HWIFileDownloader.alloc().initWithDelegateMaxConcurrentDownloads(this.delegate, 1);
     this.hwi.setupWithCompletion(() => {
@@ -193,7 +192,7 @@ export class DownloadManager extends Common {
     }
 
     const refId: number = this.getNextRefId();
-    console.log(`\n\nSubmit download with refId=${refId}, url=${request.url} destination=${request.destinationLocalUri}\n\n`);
+    // console.log(`\n\nSubmit download with refId=${refId}, url=${request.url} destination=${request.destinationLocalUri}\n\n`);
     const task = {
       refId: refId,
       request: request,
