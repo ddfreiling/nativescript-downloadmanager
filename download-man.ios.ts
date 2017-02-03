@@ -13,7 +13,6 @@ export interface DownloadTaskIOS {
   state: DownloadState;
   latestProgress: HWIFileDownloadProgress;
   reason: string;
-  resumeData?: NSData;
 }
 
 const DOWNLOADMANAGER_PERSISTANCE_KEY = 'TNS_NOTA_DOWNLOADMANAGER_IOS';
@@ -61,7 +60,7 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
 
 	downloadFailedWithIdentifierErrorHttpStatusCodeErrorMessagesStackResumeData(aDownloadIdentifier: string, anError: NSError, aHttpStatusCode: number, anErrorMessagesStack: NSArray<string>, aResumeData: NSData): void {
     console.log(`HWI.downloadDidFail: refId=${aDownloadIdentifier}, statuscode=${aHttpStatusCode}, errorDesc=${anError.localizedDescription}`);
-    this.updateTaskProgress(aDownloadIdentifier, DownloadState.FAILED, undefined, anError.localizedDescription, aResumeData);
+    this.updateTaskProgress(aDownloadIdentifier, DownloadState.FAILED, undefined, anError.localizedDescription);
   }
 
   /**
@@ -76,8 +75,8 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
   }
 
 	downloadPausedWithIdentifierResumeData?(aDownloadIdentifier: string, aResumeData: NSData): void {
-    console.log(`HWI: downloadDidPause: ${aDownloadIdentifier}`);
-    this.updateTaskProgress(aDownloadIdentifier, DownloadState.PAUSED, undefined, undefined, aResumeData);
+    console.log(`HWI: downloadDidPause: ${aDownloadIdentifier}, resumeData: ${aResumeData}`);
+    this.updateTaskProgress(aDownloadIdentifier, DownloadState.PAUSED);
   }
 
 	downloadProgressChangedForIdentifier?(aDownloadIdentifier: string): void {
@@ -122,7 +121,7 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
 	// rootProgress?(): NSProgress;
 	// urlRequestForRemoteURL?(aRemoteURL: NSURL): NSURLRequest;
 
-  private updateTaskProgress(refId: string, state: DownloadState, progress?: HWIFileDownloadProgress, reason?: string, resumeData?: NSData) {
+  private updateTaskProgress(refId: string, state: DownloadState, progress?: HWIFileDownloadProgress, reason?: string) {
     const task = this.man.getTaskByRefId(refId);
     if (task) {
       task.state = state;
@@ -131,9 +130,6 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
       }
       if (reason) {
         task.reason = reason;
-      }
-      if (resumeData) {
-        task.resumeData = resumeData;
       }
     }
   }
@@ -158,15 +154,17 @@ export class DownloadManager extends Common {
       console.log(`DownloadManager - HWI setup completed!`);
     });
     this.loadPersistedTasks();
-    this.resumeTasks();
+    this.cleanUpFinishedTasks();
   }
 
   private persistCurrentTasks() {
     appSettings.setString(DOWNLOADMANAGER_PERSISTANCE_KEY, JSON.stringify(this.currentTasks));
+    console.log(`Persist tasks: ${JSON.stringify(Object.keys(this.currentTasks))}`);
   }
 
   private loadPersistedTasks() {
     this.currentTasks = JSON.parse(appSettings.getString(DOWNLOADMANAGER_PERSISTANCE_KEY, '{}'));
+    console.log(`Loaded persisted tasks: ${JSON.stringify(Object.keys(this.currentTasks))}`);
   }
 
   // Used by HWI delegate
@@ -214,7 +212,7 @@ export class DownloadManager extends Common {
   isDownloadInProgress(refId: number): boolean {
     const task = this.currentTasks[refId];
     try {
-      return task && this.hwi.isDownloadingIdentifier(task.request.url);
+      return task && super.isDownloadInProgress(refId) && this.hwi.isDownloadingIdentifier(task.request.url);
     } catch (err) {
       console.log(`DownloadManager.isDownloadInProgress - Error: ${err}`);
       return false;
@@ -241,8 +239,9 @@ export class DownloadManager extends Common {
 
   getDownloadsInProgress(): number[] {
     const refIdsInProgress: number[] = [];
-    for (const refId in this.currentTasks) {
-      if (this.hwi.isDownloadingIdentifier(refId)) {
+    for (const key in this.currentTasks) {
+      const refId: number = +key;
+      if (this.isDownloadInProgress(+refId) && this.hwi.isDownloadingIdentifier(key)) {
         refIdsInProgress.push(+refId);
       }
     }
@@ -304,7 +303,7 @@ export class DownloadManager extends Common {
     this.currentTasks = null;
   }
 
-  private resumeTasks() {
+  private cleanUpFinishedTasks() {
     for (const key in this.currentTasks) {
       const refId: number = +key;
       const task: DownloadTaskIOS = this.currentTasks[refId];
@@ -312,9 +311,6 @@ export class DownloadManager extends Common {
       if (!this.isInProgress(task.state)) {
         console.log(`DownloadMan: cleaning task no longer in-progress, for refId=${refId}, url=${task.request.url}`);
         delete this.currentTasks[refId];
-      } else if (task.resumeData) {
-        console.log(`DownloadMan: resume task with refId=${refId}, url=${task.request.url}`);
-        this.hwi.startDownloadWithIdentifierUsingResumeData(key, task.resumeData);
       }
     }
   }

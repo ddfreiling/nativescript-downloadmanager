@@ -1,6 +1,6 @@
 {
   "name": "@nota/nativescript-downloadmanager",
-  "version": "0.4.0-alpha2",
+  "version": "0.4.0-alpha3",
   "description": "Plugin for Nativescript, which wraps background download-managers on iOS and Android",
   "main": "download-man",
   "typings": "download-man.types.d.ts",
