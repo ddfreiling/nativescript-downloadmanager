@@ -159,12 +159,12 @@ export class DownloadManager extends Common {
 
   private persistCurrentTasks() {
     appSettings.setString(DOWNLOADMANAGER_PERSISTANCE_KEY, JSON.stringify(this.currentTasks));
-    console.log(`Persist tasks: ${JSON.stringify(Object.keys(this.currentTasks))}`);
+    // console.log(`Persist tasks: ${JSON.stringify(Object.keys(this.currentTasks))}`);
   }
 
   private loadPersistedTasks() {
     this.currentTasks = JSON.parse(appSettings.getString(DOWNLOADMANAGER_PERSISTANCE_KEY, '{}'));
-    console.log(`Loaded persisted tasks: ${JSON.stringify(Object.keys(this.currentTasks))}`);
+    // console.log(`Loaded persisted tasks: ${JSON.stringify(Object.keys(this.currentTasks))}`);
   }
 
   // Used by HWI delegate
@@ -309,7 +309,7 @@ export class DownloadManager extends Common {
       const task: DownloadTaskIOS = this.currentTasks[refId];
       
       if (!this.isInProgress(task.state)) {
-        console.log(`DownloadMan: cleaning task no longer in-progress, for refId=${refId}, url=${task.request.url}`);
+        // console.log(`DownloadMan: cleaning task no longer in-progress, for refId=${refId}, url=${task.request.url}`);
         delete this.currentTasks[refId];
       }
     }

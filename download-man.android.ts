@@ -58,8 +58,8 @@ export class DownloadManager extends Common {
     try {
       const uri = android.net.Uri.parse(request.url);
       const localUri = android.net.Uri.fromFile(new java.io.File(request.destinationLocalUri));
-      console.log(`Destination: ${localUri}`);
-      console.log(`ShowNoticicaiton: ${request.showNotification}`);
+      // console.log(`Destination: ${localUri}`);
+      // console.log(`ShowNoticicaiton: ${request.showNotification}`);
       const req = new android.app.DownloadManager.Request(android.net.Uri.parse(request.url));
       if (!request.showNotification) {
         // Permission needed to download without notification!
@@ -68,13 +68,13 @@ export class DownloadManager extends Common {
       req.setTitle(request.notificationTitle);
       req.setDescription(request.notificationDescription);
       for (let headerName in request.extraHeaders) {
-        console.log(`Adding header ${headerName}=${request.extraHeaders[headerName]}`);
+        // console.log(`Adding header ${headerName}=${request.extraHeaders[headerName]}`);
         req.addRequestHeader(headerName, request.extraHeaders[headerName]);
       }
       req.setAllowedOverMetered(request.allowedOverMetered);
       req.setDestinationUri(localUri);
       const refId = this.downloadManager.enqueue(req);
-      console.log('Request refId: ' + refId);
+      // console.log('Request refId: ' + refId);
       return Promise.resolve(refId);
     } catch (ex) {
       console.log('DownloadManager exception: ' + ex);
@@ -88,7 +88,7 @@ export class DownloadManager extends Common {
 
   getAvailableDiskSpaceInBytes(): number {
     const stats = new android.os.StatFs(this.getExternalFilesDirPath());
-    if (platform.device.sdkVersion >= "18") {
+    if (+platform.device.sdkVersion >= 18) {
       return (<StatFs_API18>stats).getAvailableBytes();
     } else {
       return stats.getAvailableBlocks() * stats.getBlockSize();
