@@ -7,6 +7,7 @@
         "noEmitOnError": false,
         "inlineSourceMap": true,
         "declaration": true,
+        "noLib": true,
         "skipLibCheck": true
     },
     "files": [
@@ -14,9 +15,10 @@
       "download-man.android.ts",
       "download-man.ios.ts",
       // References
+      "node_modules/tns-core-modules/lib.core.d.ts",
+      "node_modules/tns-core-modules/tns-core-modules.d.ts",
       "node_modules/tns-platform-declarations/android/android.d.ts",
       "node_modules/tns-platform-declarations/ios/ios.d.ts",
-      "node_modules/tns-core-modules/tns-core-modules.d.ts",
       "HWIFileDownload.d.ts"
     ],
     "compileOnSave": false
