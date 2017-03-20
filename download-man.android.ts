@@ -17,6 +17,7 @@ export class DownloadManager extends Common {
 
   constructor() {
     super();
+    this.android = this.downloadManager;
   }
 
   private get downloadManager(): android.app.DownloadManager {

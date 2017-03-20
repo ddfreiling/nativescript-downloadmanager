@@ -153,6 +153,7 @@ export class DownloadManager extends Common {
     this.hwi.setupWithCompletion(() => {
       console.log(`DownloadManager - HWI setup completed!`);
     });
+    this.ios = this.hwi;
     this.loadPersistedTasks();
     this.cleanUpFinishedTasks();
   }

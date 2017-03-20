@@ -30,6 +30,8 @@ export interface DownloadStatus {
     reason: string;
 }
 export declare class DownloadManager {
+    android: any;
+    ios: any;
     /**
      * Downloads a single file using a DownloadRequest
      * @return Promise<number> with reference ID to the started download

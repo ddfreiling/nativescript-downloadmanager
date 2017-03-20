@@ -3,23 +3,26 @@ import { DownloadManager, DownloadRequest, DownloadState, DownloadStatus } from 
 
 
 export abstract class Common implements DownloadManager {
+  
+  public android: any;
+  public ios: any;
 
-  isInProgress(state: DownloadState): boolean {
+  public isInProgress(state: DownloadState): boolean {
     return (state !== DownloadState.FAILED && state !== DownloadState.SUCCESFUL);
   }
 
-  getDownloadState(refId: number): DownloadState {
+  public getDownloadState(refId: number): DownloadState {
     const status = this.getDownloadStatus(refId);
     if (!status) return null;
     else return status.state;
   }
 
-  isDownloadInProgress(refId: number): boolean {
+  public isDownloadInProgress(refId: number): boolean {
     const state = this.getDownloadState(refId);
     return state && this.isInProgress(state);
   }
 
-  cancelAllDownloads(): void {
+  public cancelAllDownloads(): void {
     this.cancelDownloads(...this.getDownloadsInProgress());
   }
 
@@ -32,11 +35,3 @@ export abstract class Common implements DownloadManager {
   public abstract getAvailableDiskSpaceInBytes(): number;
   public abstract destroy();
 }
-
-export class Utils {
-  public static SUCCESS_MSG(): string {
-    let msg = `Your plugin is working on ${app.android ? 'Android' : 'iOS'}.`;
-    return msg;
-  }
-}
-
