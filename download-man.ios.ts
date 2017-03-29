@@ -257,11 +257,20 @@ export class DownloadManager extends Common {
     return fs.knownFolders.temp().path;
   }
 
+  getPrivateFilesDirPath(): string {
+    return fs.knownFolders.documents().path;
+  }
+
   getSizeOfFile(localFilePath: string): number {
-    const nsFileManager = utils.ios.getter(NSFileManager, NSFileManager.defaultManager);
-    const dict = nsFileManager.attributesOfItemAtPathError(localFilePath);
-    const fileSize = dict.valueForKey(NSFileSize);
-    return fileSize ? fileSize.longValue : 0;
+    try {
+      const fileMan = utils.ios.getter(NSFileManager, NSFileManager.defaultManager);
+      const dict = fileMan.attributesOfItemAtPathError(localFilePath);
+      const fileSize = dict.valueForKey(NSFileSize);
+      return fileSize ? fileSize.longValue : 0;
+    } catch(err) {
+      console.log(`Error retrieving file size for path: ${localFilePath}`);
+      return 0;
+    }
   }
 
   cancelDownloads(...refIds: number[]): void {

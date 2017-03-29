@@ -27,6 +27,7 @@ export abstract class Common implements DownloadManager {
   }
 
   public abstract getExternalFilesDirPath(): string;
+  public abstract getPrivateFilesDirPath(): string;
   public abstract getSizeOfFile(localFilePath: string): number;
   public abstract getDownloadsInProgress(): number[];
   public abstract downloadFile(request: DownloadRequest): Promise<number>;

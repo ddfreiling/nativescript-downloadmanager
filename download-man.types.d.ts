@@ -71,6 +71,11 @@ export declare class DownloadManager {
      */
     getExternalFilesDirPath(): string;
     /**
+     * Gets the absolute and canonical dir path,
+     * for storing files inaccesible to the user
+     */
+    getPrivateFilesDirPath(): string;
+    /**
      * Gets the available disk space in bytes on the native platform
      */
     getAvailableDiskSpaceInBytes(): number;

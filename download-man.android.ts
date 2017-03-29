@@ -38,6 +38,10 @@ export class DownloadManager extends Common {
     return getAndroidAppContext().getExternalFilesDir(null).getCanonicalPath();
   }
 
+  getPrivateFilesDirPath(): string {
+    return getAndroidAppContext().getFilesDir().getCanonicalPath();
+  }
+
   getSizeOfFile(localFilePath: string): number {
     return new java.io.File(localFilePath).length();
   }
