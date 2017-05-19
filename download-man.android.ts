@@ -72,6 +72,7 @@ export class DownloadManager extends Common {
       }
       req.setTitle(request.notificationTitle);
       req.setDescription(request.notificationDescription);
+      req.setVisibleInDownloadsUi(false);
       for (let headerName in request.extraHeaders) {
         // console.log(`Adding header ${headerName}=${request.extraHeaders[headerName]}`);
         req.addRequestHeader(headerName, request.extraHeaders[headerName]);
