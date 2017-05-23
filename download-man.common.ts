@@ -1,4 +1,5 @@
 import * as app from 'application';
+import { isIOS } from 'platform';
 import { DownloadManager, DownloadRequest, DownloadState, DownloadStatus } from './download-man.types';
 
 
@@ -6,6 +7,8 @@ export abstract class Common implements DownloadManager {
   
   public android: any;
   public ios: any;
+
+  public debugOutputEnabled = false;
 
   public isInProgress(state: DownloadState): boolean {
     return (state !== DownloadState.FAILED && state !== DownloadState.SUCCESFUL);
@@ -35,4 +38,11 @@ export abstract class Common implements DownloadManager {
   public abstract cancelDownloads(...refIds: number[]);
   public abstract getAvailableDiskSpaceInBytes(): number;
   public abstract destroy();
+
+  public _log(logStr: string) {
+    if (this.debugOutputEnabled) {
+      let platform = isIOS ? 'iOS' : 'Android';
+      console.log(`tns-audioplayer(${platform}): ${logStr}`);
+    }
+  }
 }
