@@ -149,7 +149,7 @@ export class DownloadManager extends Common {
   constructor() {
     super();
     this.delegate = (<HWIFileDownloadDelegateImpl>HWIFileDownloadDelegateImpl.alloc()).initWithDownloadManager(this);
-    this.hwi = HWIFileDownloader.alloc().initWithDelegateMaxConcurrentDownloads(this.delegate, 1);
+    this.hwi = HWIFileDownloader.alloc().initWithDelegateMaxConcurrentDownloads(this.delegate, 5);
     this.hwi.setupWithCompletion(() => {
       console.log(`DownloadManager - HWI setup completed!`);
     });
