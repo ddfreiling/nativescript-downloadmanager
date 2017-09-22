@@ -16,8 +16,11 @@ export abstract class Common implements DownloadManager {
 
   public getDownloadState(refId: number): DownloadState {
     const status = this.getDownloadStatus(refId);
-    if (!status) return null;
-    else return status.state;
+    if (!status) {
+      return null;
+    } else {
+      return status.state;
+    }
   }
 
   public isDownloadInProgress(refId: number): boolean {

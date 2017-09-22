@@ -106,11 +106,7 @@ export class DownloadManager extends Common {
   }
 }
 
-
-
-
 /* Private helpers */
-
 function getAndroidAppContext(): android.content.Context {
   return app.android.context;
 }
@@ -135,9 +131,9 @@ function getInProgressStatusFlag(): number {
 }
 
 function getDownloadStatus(manager: android.app.DownloadManager, refId: number): DownloadStatus {
-  let query = new android.app.DownloadManager.Query();
+  const query = new android.app.DownloadManager.Query();
   query.setFilterById([refId]);
-  let cursor = manager.query(query);
+  const cursor = manager.query(query);
   if (!cursor.moveToFirst()) {
     return null;
   }
@@ -155,7 +151,7 @@ function getDownloadStatusFromCursor(cursor: android.database.ICursor): Download
     downloadUri: getCursorString(cursor, android.app.DownloadManager.COLUMN_URI),
     localUri: getCursorString(cursor, android.app.DownloadManager.COLUMN_LOCAL_URI),
     state: getCursorLong(cursor, android.app.DownloadManager.COLUMN_STATUS),
-    reason: getCursorString(cursor, android.app.DownloadManager.COLUMN_REASON)
+    reason: getReason(cursor),
   };
 }
 
@@ -165,6 +161,44 @@ function getCursorLong(cursor: android.database.ICursor, colIndex: string): numb
 
 function getCursorString(cursor: android.database.ICursor, colIndex: string): string {
   return cursor.getString(cursor.getColumnIndex(colIndex));
+}
+
+let reasons: Map<number, string>;
+function ensureReason() {
+  if (reasons) {
+    return;
+  }
+
+  reasons = new Map<number, string>([
+    [ android.app.DownloadManager.ERROR_CANNOT_RESUME, 'error_cannot_resume' ],
+    [ android.app.DownloadManager.ERROR_DEVICE_NOT_FOUND, 'error_device_not_found' ],
+    [ android.app.DownloadManager.ERROR_FILE_ALREADY_EXISTS, 'error_file_already_exists' ],
+    [ android.app.DownloadManager.ERROR_FILE_ERROR, 'error_file_error' ],
+    [ android.app.DownloadManager.ERROR_HTTP_DATA_ERROR, 'error_http_data_error' ],
+    [ android.app.DownloadManager.ERROR_INSUFFICIENT_SPACE, 'error_insufficient_space' ],
+    [ android.app.DownloadManager.ERROR_TOO_MANY_REDIRECTS, 'error_too_many_redirects' ],
+    [ android.app.DownloadManager.ERROR_UNHANDLED_HTTP_CODE, 'error_unhandled_http_code' ],
+    [ android.app.DownloadManager.ERROR_UNKNOWN, 'error_unknown' ],
+
+    [ android.app.DownloadManager.PAUSED_QUEUED_FOR_WIFI, 'paused_queued_for_wifi' ],
+    [ android.app.DownloadManager.PAUSED_WAITING_FOR_NETWORK, 'paused_waiting_for_network' ],
+    [ android.app.DownloadManager.PAUSED_WAITING_TO_RETRY, 'paused_waiting_to_retry' ],
+    [ android.app.DownloadManager.PAUSED_UNKNOWN, 'paused_unknown' ],
+
+    [ 0, 'no' ],
+  ]);
+}
+
+function getReason(cursor: android.database.ICursor): string {
+  const reasonIndex = getCursorLong(cursor, android.app.DownloadManager.COLUMN_REASON);
+
+  ensureReason();
+
+  if (reasons.has(reasonIndex)) {
+    return reasons.get(reasonIndex);
+  }
+
+  return 'placeholder';
 }
 
 function getDownloadInfoLong(manager: android.app.DownloadManager, refId: number, colName: string): number {

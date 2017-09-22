@@ -215,7 +215,7 @@ export class DownloadJobManager extends DownloadManager {
         console.log(`_interval state=${DownloadState[status.state]}`);
         console.log('_interval :: ', JSON.stringify(status));
         obs.next(status);
-        if (status.state == DownloadState.FAILED) {
+        if (status.state === DownloadState.FAILED) {
           sub.unsubscribe();
           obs.error(status.reason);
           obs.complete();
