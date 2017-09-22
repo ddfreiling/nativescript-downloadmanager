@@ -1,10 +1,10 @@
-import * as app from 'application';
-import { isIOS } from 'platform';
-import { DownloadManager, DownloadRequest, DownloadState, DownloadStatus } from './download-man.types';
+import * as app from 'tns-core-modules/application';
+import { isIOS } from 'tns-core-modules/platform';
+import { DownloadManager, DownloadRequest, DownloadState, DownloadStatus } from './downloadmanager.types';
 
 
 export abstract class Common implements DownloadManager {
-  
+
   public android: any;
   public ios: any;
 

@@ -1,11 +1,11 @@
-import * as app from "application";
-import * as platform from "platform";
+import * as app from "tns-core-modules/application";
+import * as platform from "tns-core-modules/platform";
 
-import {Common} from './download-man.common';
-import {DownloadRequest, DownloadState, DownloadStatus} from './download-man.types';
-export * from './download-man.types';
+import {Common} from './downloadmanager.common';
+import {DownloadRequest, DownloadState, DownloadStatus} from './downloadmanager.types';
+export * from './downloadmanager.types';
 
-interface StatFs_API18 extends android.os.StatFs {
+interface StatFsAPI18 extends android.os.StatFs {
   getAvailableBytes(): number;
   getAvailableBlocksLong(): number;
   getBlockSizeLong(): number;
@@ -95,7 +95,7 @@ export class DownloadManager extends Common {
   getAvailableDiskSpaceInBytes(): number {
     const stats = new android.os.StatFs(this.getExternalFilesDirPath());
     if (+platform.device.sdkVersion >= 18) {
-      return (<StatFs_API18>stats).getAvailableBytes();
+      return (<StatFsAPI18>stats).getAvailableBytes();
     } else {
       return stats.getAvailableBlocks() * stats.getBlockSize();
     }

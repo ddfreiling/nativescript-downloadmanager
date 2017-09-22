@@ -1,5 +1,5 @@
-import * as http from 'http';
-import * as appSettings from 'application-settings';
+import * as http from 'tns-core-modules/http';
+import * as appSettings from 'tns-core-modules/application-settings';
 
 import { Observable } from 'rxjs/Observable';
 import { Observer } from 'rxjs/Observer';

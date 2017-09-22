@@ -1,11 +1,11 @@
-import * as fs from 'file-system';
-import * as http from 'http';
-import * as appSettings from 'application-settings';
-import * as utils from 'utils/utils';
+import * as fs from 'tns-core-modules/file-system';
+import * as http from 'tns-core-modules/http';
+import * as appSettings from 'tns-core-modules/application-settings';
+import * as utils from 'tns-core-modules/utils/utils';
 
-import {Common} from './download-man.common';
-import {DownloadRequest, DownloadState, DownloadStatus} from './download-man.types';
-export * from './download-man.types';
+import {Common} from './downloadmanager.common';
+import {DownloadRequest, DownloadState, DownloadStatus} from './downloadmanager.types';
+export * from './downloadmanager.types';
 
 export interface DownloadTaskIOS {
   refId: number;
@@ -18,19 +18,19 @@ export interface DownloadTaskIOS {
 const DOWNLOADMANAGER_PERSISTANCE_KEY = 'TNS_NOTA_DOWNLOADMANAGER_IOS';
 
 export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDownloadDelegate {
-  
-  public static ObjCProtocols = [ HWIFileDownloadDelegate ]
+
+  public static ObjCProtocols = [ HWIFileDownloadDelegate ];
   private man: DownloadManager;
   private activityCount = 0;
   private _sessionConfig: NSURLSessionConfiguration;
 
   public init() {
-    var self = super.init();
+    let self = super.init();
     return self;
   }
-  
+
   public initWithDownloadManager(man: DownloadManager) {
-    var self = super.init();
+    let self = super.init();
     this.man = man;
     return self;
   }
@@ -43,22 +43,22 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
    * Required delegate functions
    */
 
-	incrementNetworkActivityIndicatorActivityCount(): void {
+  incrementNetworkActivityIndicatorActivityCount(): void {
     ++this.activityCount;
     this.updateNetworkActivityIndicatorVisibility();
   }
 
-	decrementNetworkActivityIndicatorActivityCount(): void {
+  decrementNetworkActivityIndicatorActivityCount(): void {
     --this.activityCount;
     this.updateNetworkActivityIndicatorVisibility();
   }
 
-	downloadDidCompleteWithIdentifierLocalFileURL(aDownloadIdentifier: string, aLocalFileURL: NSURL): void {
+  downloadDidCompleteWithIdentifierLocalFileURL(aDownloadIdentifier: string, aLocalFileURL: NSURL): void {
     this.man._log(`HWI.downloadDidComplete: ${aDownloadIdentifier} -> ${aLocalFileURL.absoluteString}`);
     this.updateTaskProgress(aDownloadIdentifier, DownloadState.SUCCESFUL);
   }
 
-	downloadFailedWithIdentifierErrorHttpStatusCodeErrorMessagesStackResumeData(aDownloadIdentifier: string, anError: NSError, aHttpStatusCode: number, anErrorMessagesStack: NSArray<string>, aResumeData: NSData): void {
+  downloadFailedWithIdentifierErrorHttpStatusCodeErrorMessagesStackResumeData(aDownloadIdentifier: string, anError: NSError, aHttpStatusCode: number, anErrorMessagesStack: NSArray<string>, aResumeData: NSData): void {
     this.man._log(`HWI.downloadDidFail: refId=${aDownloadIdentifier}, statuscode=${aHttpStatusCode}, errorDesc=${anError.localizedDescription}`);
     this.updateTaskProgress(aDownloadIdentifier, DownloadState.FAILED, undefined, anError.localizedDescription);
   }
@@ -66,7 +66,7 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
   /**
    * Optional delegate functions
    */
-  
+
   customizeBackgroundSessionConfiguration?(aBackgroundSessionConfiguration: NSURLSessionConfiguration): void {
     this.man._log(`HWI: customizeBackgroundSessionConfiguration`);
     this._sessionConfig = aBackgroundSessionConfiguration;
@@ -74,12 +74,12 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
     // see https://developer.apple.com/reference/foundation/nsurlsessionconfiguration
   }
 
-	downloadPausedWithIdentifierResumeData?(aDownloadIdentifier: string, aResumeData: NSData): void {
+  downloadPausedWithIdentifierResumeData?(aDownloadIdentifier: string, aResumeData: NSData): void {
     this.man._log(`HWI: downloadDidPause: ${aDownloadIdentifier}, resumeData: ${aResumeData}`);
     this.updateTaskProgress(aDownloadIdentifier, DownloadState.PAUSED);
   }
 
-	downloadProgressChangedForIdentifier?(aDownloadIdentifier: string): void {
+  downloadProgressChangedForIdentifier?(aDownloadIdentifier: string): void {
     const progress: HWIFileDownloadProgress = this.man.hwi.downloadProgressForIdentifier(aDownloadIdentifier);
     this.updateTaskProgress(aDownloadIdentifier, DownloadState.RUNNING, progress);
   }
@@ -91,11 +91,11 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
       const destPath = task.request.destinationLocalUri;
       this.man._log(`Downloaded file destination path: ${destPath}`);
       try {
-        const destFolderPath = destPath.substr(0, destPath.lastIndexOf('/'))
+        const destFolderPath = destPath.substr(0, destPath.lastIndexOf('/'));
         if (!fs.Folder.exists(destFolderPath)) {
           this.man._log(`Creating folders for path: ${destFolderPath}`);
           // Implicitly ensuring folder is created when using Folder.fromPath
-          
+
           fs.Folder.fromPath(destFolderPath);
         }
       } catch (err) {
@@ -110,16 +110,18 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
     } else {
       this.man._log(`Error: no task matching refId=${aDownloadIdentifier}, cannot provide any localFileURL to save it to`);
     }
+
+    return null;
   }
 
   resumeDownloadWithIdentifier?(aDownloadIdentifier: string): void {
     this.man._log(`HWI.resumeDownloadWithIdentifier: refId=${aDownloadIdentifier}`);
   }
-	// downloadAtLocalFileURLIsValidForDownloadIdentifier?(aLocalFileURL: NSURL, aDownloadIdentifier: string): boolean;
-	// httpStatusCodeIsValidForDownloadIdentifier?(aHttpStatusCode: number, aDownloadIdentifier: string): boolean;
-	// onAuthenticationChallengeDownloadIdentifierCompletionHandler?(aChallenge: NSURLAuthenticationChallenge, aDownloadIdentifier: string, aCompletionHandler: (p1: NSURLCredential, p2: NSURLSessionAuthChallengeDisposition) => void): void;
-	// rootProgress?(): NSProgress;
-	// urlRequestForRemoteURL?(aRemoteURL: NSURL): NSURLRequest;
+  // downloadAtLocalFileURLIsValidForDownloadIdentifier?(aLocalFileURL: NSURL, aDownloadIdentifier: string): boolean;
+  // httpStatusCodeIsValidForDownloadIdentifier?(aHttpStatusCode: number, aDownloadIdentifier: string): boolean;
+  // onAuthenticationChallengeDownloadIdentifierCompletionHandler?(aChallenge: NSURLAuthenticationChallenge, aDownloadIdentifier: string, aCompletionHandler: (p1: NSURLCredential, p2: NSURLSessionAuthChallengeDisposition) => void): void;
+  // rootProgress?(): NSProgress;
+  // urlRequestForRemoteURL?(aRemoteURL: NSURL): NSURLRequest;
 
   private updateTaskProgress(refId: string, state: DownloadState, progress?: HWIFileDownloadProgress, reason?: string) {
     const task = this.man.getTaskByRefId(refId);
@@ -136,7 +138,7 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
 
   private updateNetworkActivityIndicatorVisibility() {
     const sharedApp = utils.ios.getter(UIApplication, UIApplication.sharedApplication);
-    sharedApp.networkActivityIndicatorVisible = (this.activityCount > 0)
+    sharedApp.networkActivityIndicatorVisible = (this.activityCount > 0);
   }
 }
 
@@ -180,7 +182,7 @@ export class DownloadManager extends Common {
     const tempOffsetIndex = destPath.indexOf(tempFolder.path);
     if (tempOffsetIndex === -1) {
       return Promise.reject('Download destination cannot be outside temp/cache directory on iOS.');
-    } 
+    }
     if (fs.File.exists(request.destinationLocalUri)) {
       fs.File.fromPath(request.destinationLocalUri).removeSync((err) => {
         return Promise.reject(`Download destination already exists and could not remove existing file. ${err}`);
@@ -199,8 +201,8 @@ export class DownloadManager extends Common {
       state: DownloadState.PENDING,
       reason: 'none',
     };
-    this.hwi.startDownloadWithIdentifierFromRemoteURL(''+ refId, NSURL.URLWithString(request.url));
-    
+    this.hwi.startDownloadWithIdentifierFromRemoteURL('' + refId, NSURL.URLWithString(request.url));
+
     this.currentTasks[refId] = task;
     this.persistCurrentTasks();
     return Promise.resolve(refId);
@@ -267,7 +269,7 @@ export class DownloadManager extends Common {
       const dict = fileMan.attributesOfItemAtPathError(localFilePath);
       const fileSize = dict.valueForKey(NSFileSize);
       return fileSize ? fileSize.longValue : 0;
-    } catch(err) {
+    } catch (err) {
       this._log(`Error retrieving file size for path: ${localFilePath}`);
       return 0;
     }
@@ -276,7 +278,7 @@ export class DownloadManager extends Common {
   cancelDownloads(...refIds: number[]): void {
     for (const refId of refIds) {
       try {
-        this.hwi.cancelDownloadWithIdentifier(''+ refId);
+        this.hwi.cancelDownloadWithIdentifier('' + refId);
         delete this.currentTasks[refId];
       } catch (err) {
         this._log(`DownloadManager.cancelDownloads - Error: ${err}`);
@@ -317,7 +319,7 @@ export class DownloadManager extends Common {
     for (const key in this.currentTasks) {
       const refId: number = +key;
       const task: DownloadTaskIOS = this.currentTasks[refId];
-      
+
       if (!this.isInProgress(task.state)) {
         this._log(`DownloadMan: cleaning task no longer in-progress, for refId=${refId}, url=${task.request.url}`);
         delete this.currentTasks[refId];
