@@ -1,6 +1,6 @@
-import * as fs from 'file-system';
-import * as app from 'application';
-import * as appSettings from 'application-settings';
+import * as fs from 'tns-core-modules/file-system';
+import * as app from 'tns-core-modules/application';
+import * as appSettings from 'tns-core-modules/application-settings';
 
 import { Observable } from 'rxjs/Observable';
 import { Observer } from 'rxjs/Observer';

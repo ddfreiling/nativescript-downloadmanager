@@ -1,5 +1,5 @@
-import {Observable} from 'data/observable';
-import {DownloadManager} from '@nota/nativescript-downloadmanager';
+import { Observable } from 'tns-core-modules/data/observable';
+import { DownloadManager } from '@nota/nativescript-downloadmanager';
 
 export class HelloWorldModel extends Observable {
   public message: string;

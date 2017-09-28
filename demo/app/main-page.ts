@@ -1,11 +1,11 @@
-import * as observable from 'data/observable';
-import * as pages from 'ui/page';
+import * as observable from 'tns-core-modules/data/observable';
+import * as pages from 'tns-core-modules/ui/page';
 import {HelloWorldModel} from './main-view-model';
 
 import { Observable } from 'rxjs/Observable';
 
-import http = require('http');
-import fs = require("file-system");
+import * as http from 'tns-core-modules/http';
+import * as fs from 'tns-core-modules/file-system';
 
 import {DownloadManager, DownloadRequest, DownloadStatus} from '@nota/nativescript-downloadmanager';
 import {DownloadJobStatus} from './download-job-manager';

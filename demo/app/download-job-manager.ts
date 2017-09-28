@@ -1,5 +1,5 @@
-import * as http from 'http';
-import * as appSettings from 'application-settings';
+import * as http from 'tns-core-modules/http';
+import * as appSettings from 'tns-core-modules/application-settings';
 
 import { Observable } from 'rxjs/Observable';
 import { Observer } from 'rxjs/Observer';
@@ -209,28 +209,33 @@ export class DownloadJobManager extends DownloadManager {
   getDownloadStatusObservable(refId: number): Observable<DownloadStatus> {
     console.log(`_getDownloadStatusObservable refId=${refId}`);
     return Observable.create((obs: Observer<DownloadStatus>) => {
-      let downloadInProgress = true;
-      Observable.interval(DownloadJobManager.ProgressUpdateInterval).takeWhile(() => downloadInProgress).subscribe(() => {
+      const sub = Observable.interval(DownloadJobManager.ProgressUpdateInterval).subscribe(() => {
         console.log('_interval refId='+ refId);
         const status = this.getDownloadStatus(refId);
         console.log(`_interval state=${DownloadState[status.state]}`);
         console.log('_interval :: ', JSON.stringify(status));
         obs.next(status);
-        if (status.state == DownloadState.FAILED) {
+        if (status.state === DownloadState.FAILED) {
+          sub.unsubscribe();
           obs.error(status.reason);
+          obs.complete();
         }
         else if (!this.isInProgress(status.state)) {
-          downloadInProgress = false;
+          sub.unsubscribe();
           obs.complete();
         }
       });
+
+      return () => {
+        sub.unsubscribe();
+      };
     });
   }
 
   destroy() {
     super.destroy();
   }
-  
+
   /**
    * Gets total bytes for all downloads in DownloadJob
    * WARN: Currently affected by a bug on Android on files larger than device RAM
