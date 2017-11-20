@@ -1,169 +1,87 @@
-import * as observable from 'tns-core-modules/data/observable';
+import * as obs from 'tns-core-modules/data/observable';
 import * as pages from 'tns-core-modules/ui/page';
-import {HelloWorldModel} from './main-view-model';
 
-import { Observable } from 'rxjs/Observable';
+// import { Observable } from 'rxjs/Observable';
 
 import * as http from 'tns-core-modules/http';
 import * as fs from 'tns-core-modules/file-system';
 
-import {DownloadManager, DownloadRequest, DownloadStatus} from '@nota/nativescript-downloadmanager';
-import {DownloadJobStatus} from './download-job-manager';
-import {PersistanceModule} from './persistance-module';
+import { DownloadManager, DownloadRequest, DownloadStatus, DownloadState } from '@nota/nativescript-downloadmanager';
 
-let mod;
-
-var model: HelloWorldModel;
+var model: obs.Observable;
+var downloadManager: DownloadManager;
 
 // Event handler for Page "loaded" event attached in main-page.xml
-export function pageLoaded(args: observable.EventData) {
+export function pageLoaded(args: obs.EventData) {
   // Get the event sender
   var page = <pages.Page>args.object;
-  model = new HelloWorldModel();
+  model = obs.fromObject({
+    downloadState: '',
+    progress: 0,
+    spaceAvailable: 0
+  });
+  downloadManager = new DownloadManager();
+  downloadManager.debugOutputEnabled = true;
   page.bindingContext = model;
-
-  mod = new PersistanceModule();
-}
-
-var bookId = '123456';
-
-export function onShowStoredFiles() {
-  mod.debugPrintStorageFolder();
-}
-
-export function onDownloadBook() {
-  mod.deleteBookContents(bookId).then(() => {
-    console.log('deleted old book contents');
-    mod.startDownloadingBook(bookId).subscribe((next) => {
-      if (next.bytesTotal > 0) {
-        const percent = Math.round(next.bytesDownloaded / next.bytesTotal * 100);
-        model.progress = percent;
-        model.notifyPropertyChange('progress', percent);
-        console.log(`- Book download progress: ${percent}%`);
-      } else {
-        console.log(`- Book download progress: ${next.bytesDownloaded / 1000} kB`);
-      }
-    }, (err) => {
-      console.log('--> Error: '+ err);
-    }, () => {
-      console.log('--> Book fully downloaded!');
-    }); 
-  });
-}
-
-export function onDeleteJobs() {
-  mod.stopAllBookDownloads();
-}
-
-export function onDownloadBookJob() {
-  mod.deleteBookContents(bookId).then(() => {
-    downloadBook(bookId);
-  });
-}
-
-export function onDownloadBookResume() {
-  mod.resumeDownloadingBook(bookId);
-}
-
-function downloadBook(bookId: string) {
-  mod.startDownloadingBook(bookId).subscribe((next) => {
-    let percent = Math.round((next.bytesTotal > 0) ?
-      next.bytesDownloaded / next.bytesTotal * 100 :
-      next.downloadsCompleted / next.downloadsTotal * 100
-    );
-    model.progress = percent;
-    model.notifyPropertyChange('progress', percent);
-    console.log(`- Book download progress: ${percent}%`);
-    console.log(`- Book download progress: ${next.downloadsCompleted} / ${next.downloadsTotal} completed`);
-    console.log(`- Book download progress: ${Math.round(next.bytesDownloaded / 1000)} / ${Math.round(next.bytesTotal / 1000)} kB`);
-  }, (err) => {
-    console.log('--> Error: '+ err);
-  }, () => {
-    console.log('--> Book fully downloaded!');
-  }); 
-}
-
-export function onHasMeta() {
-  console.log('onTest - bookFolder: '+ mod.getBookFolder(bookId));
-  const hasBook = mod.hasBookMetadata(bookId);
-  console.log('onTest - hasBook? '+ hasBook);
-}
-
-export function onLoadMeta() {
-  mod.loadBookMetadata(bookId).then((meta) => {
-    console.log('onLoadMeta - Done: '+ JSON.stringify(meta));
-  }).catch((err) => {
-    console.log('onLoadMeta - Error: '+ err);
-  });
-}
-
-export function onStoreMeta() {
-  mod.storeBookMetadata(bookId, { book: 'meta' }).then(() => {
-    console.log('onStoreMeta - Done!');
-  }).catch((err) => {
-    console.log('onStoreMeta - Error: '+ err);
-  });
 }
 
 export function onDownload() {
   console.log('onDownload');
-
-  let docs: fs.Folder = fs.knownFolders.documents();
-  let books: fs.Folder = fs.Folder.fromPath(fs.path.join(docs.path, "books"));
-
-  //traceFolderTree(docs, 1);
-  let bookPath = fs.path.normalize(fs.path.join(books.path, "/book123.zip"));
-  let bookFile = fs.File.fromPath(bookPath);
-  let downloadUrl = 'http://ipv4.download.thinkbroadband.com/10MB.zip'; 
-  // let downloadUrl = 'http://ipv4.download.thinkbroadband.com/100MB.zip';
-  // let downloadUrl = 'http://sagamusix.de/sample_collection/bass_drums.zip';
-  console.log('Downloading book from: '+ downloadUrl);
-
-  // let bookJavaFile = new java.io.File(docs.path);
-  // traceJavaFolderTree(bookJavaFile, 1);
-  //let appContext: android.content.Context = app.android.context;
-  //let extDir: java.io.File = appContext.getExternalFilesDir(null);
-  //traceJavaFolderTree(extDir, 9);
-  const extPath = fs.path.join(mod.getExternalFilesDirPath(), "books", "123", "10MB.zip");
-  console.log('ext file path: '+ extPath);
-  //traceFolderTree(dlMan.getAndroidExternalFilesDir(), 1);
-  
-  const req = new DownloadRequest(downloadUrl, extPath);
+  const downloadUrl = 'http://ipv4.download.thinkbroadband.com/100MB.zip';
+  const destinationPath = fs.path.join(fs.knownFolders.temp().path, 'dest.zip');
+  const req = new DownloadRequest(downloadUrl, destinationPath);
   req.allowedOverMetered = true;
-  mod.downloadFile(req).then((refId) => {
-    console.log('== START OBS ==');
-    Observable.interval(1000).map(() => mod.getDownloadStatus(refId))
-        .takeWhile((status) => mod.isInProgress(status.state)).subscribe((next) => {
-      console.log(`Progress: ${next.refId} > ${next.bytesDownloaded} / ${next.bytesTotal} (${Math.round(next.bytesDownloaded / next.bytesTotal * 100)}%)`);
-    }, (err) => {
-      console.log('Error! '+ err);
-    }, () => {
-      console.log('Completed!');
-    });
-  }).catch((err) => {
-    console.log('downloadFile error: '+ err);
+  req.addHeader('LBS-User', '140345');
+  req.addHeader('LBS-Token', 'LoremIpsum');
+  downloadManager.downloadFile(req).then((refId) => {
+    console.log(`Downloading with refId: ${refId}`);
+    const progressInterval = setInterval(() => {
+      const status = downloadManager.getDownloadStatus(refId);
+      // console.log(`Download status: ${JSON.stringify(status)}`);
+      if (status.state == DownloadState.RUNNING) {
+        model.set('downloadState', `refId=${refId},state=${status.state},bytes=${status.bytesDownloaded}/${status.bytesTotal}`);
+      } else {
+        model.set('downloadState', `refId=${refId},state=${status.state},reason=${status.reason}`);
+      }      
+      model.set('progress', status.bytesTotal > 0 ? (status.bytesDownloaded / status.bytesTotal * 100) : 0);
+      if (status.state === DownloadState.FAILED) {
+        console.log(`Download FAILED! reason=${status.reason}`);
+        clearInterval(progressInterval);
+      } else if (status.state === DownloadState.SUCCESFUL) {
+        console.log(`Download SUCCESS!`);
+        clearInterval(progressInterval);
+      }
+    }, 1000);
   });
+}
+
+export function onShowStoredFiles() {
+  console.log('onShowStoredFiles');
+  traceFolderTree(fs.knownFolders.temp());
 }
 
 export function onShowSpace() {
   console.log('onShowSpace');
-  const res = mod.getAvailableDiskSpaceInBytes();
+  const res = downloadManager.getAvailableDiskSpaceInBytes();
   const gb = res / (1024 * 1024 * 1024);
-  model.spaceAvailable = Math.round(gb * 100) / 100; //round to 2 decimals
-  model.notifyPropertyChange('spaceAvailable', model.spaceAvailable);
+  model.set('spaceAvailable', Math.round(gb * 100) / 100); //round to 2 decimals
+  // model.notifyPropertyChange('spaceAvailable', model.spaceAvailable);
 }
-
-
-
-
 
 function traceFolderTree(folder: fs.Folder, maxDepth: number = 3, depth: number = 0) {
   let whitespace = new Array(depth + 1).join('  ');
-  console.log(`${whitespace}Folder: ${folder.path}`);
+  if (depth === 0) {
+    console.log(`${folder.path}`);
+  }
   folder.eachEntity((ent) => {
-    console.log(`${whitespace}- ${ent.name}`);
-    if (fs.Folder.exists(ent.path) && depth < maxDepth) {
-      traceFolderTree(fs.Folder.fromPath(ent.path), maxDepth, depth + 1);
+    const isFolder = fs.Folder.exists(ent.path);
+    console.log(`${whitespace} ${isFolder ? '-' : ' '}${ent.name}`);
+    if (isFolder && depth < maxDepth) {
+      try {
+        traceFolderTree(fs.Folder.fromPath(ent.path), maxDepth, depth + 1);
+      } catch(err) {
+        console.log(`${whitespace}  * (err accessing)`);
+      }
     }
     return true;
   });
