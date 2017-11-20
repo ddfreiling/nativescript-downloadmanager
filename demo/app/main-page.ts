@@ -20,7 +20,7 @@ export function pageLoaded(args: obs.EventData) {
     progress: 0,
     spaceAvailable: 0
   });
-  downloadManager = new DownloadManager();
+  downloadManager = new DownloadManager(true);
   downloadManager.debugOutputEnabled = true;
   page.bindingContext = model;
 }

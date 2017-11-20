@@ -15,8 +15,8 @@ export class DownloadManager extends Common {
 
   private _downloadManager: android.app.DownloadManager;
 
-  constructor() {
-    super();
+  constructor(debugOutputEnabled: boolean = false) {
+    super(debugOutputEnabled);
     this.android = this.downloadManager;
   }
 

@@ -148,8 +148,8 @@ export class DownloadManager extends Common {
   private delegate: HWIFileDownloadDelegateImpl;
   private currentTasks: { [refId: number]: DownloadTaskIOS } = {};
 
-  constructor() {
-    super();
+  constructor(debugOutputEnabled = false) {
+    super(debugOutputEnabled);
     this.delegate = (<HWIFileDownloadDelegateImpl>HWIFileDownloadDelegateImpl.alloc()).initWithDownloadManager(this);
     this.hwi = HWIFileDownloader.alloc().initWithDelegateMaxConcurrentDownloads(this.delegate, 5);
     this.hwi.setupWithCompletion(() => {

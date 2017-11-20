@@ -8,7 +8,11 @@ export abstract class Common implements DownloadManager {
   public android: any;
   public ios: any;
 
-  public debugOutputEnabled = false;
+  public debugOutputEnabled: boolean;
+
+  constructor(debugOutputEnabled = false) {
+    this.debugOutputEnabled = debugOutputEnabled;
+  }
 
   public isInProgress(state: DownloadState): boolean {
     return (state !== DownloadState.FAILED && state !== DownloadState.SUCCESFUL);
