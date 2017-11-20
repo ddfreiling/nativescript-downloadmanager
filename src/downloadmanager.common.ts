@@ -49,7 +49,7 @@ export abstract class Common implements DownloadManager {
   public _log(logStr: string) {
     if (this.debugOutputEnabled) {
       let platform = isIOS ? 'iOS' : 'Android';
-      console.log(`tns-audioplayer(${platform}): ${logStr}`);
+      console.log(`tns-downloadmanager(${platform}): ${logStr}`);
     }
   }
 }
