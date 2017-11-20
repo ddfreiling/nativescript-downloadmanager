@@ -1,5 +1,3 @@
 platform :ios, '8.0'
 
-source 'https://github.com/CocoaPods/Specs.git'
-
-pod 'HWIFileDownload', '~> 3.0.0'
+pod 'HWIFileDownload', :git => 'https://github.com/Heikowi/HWIFileDownload', :commit => 'f158648'

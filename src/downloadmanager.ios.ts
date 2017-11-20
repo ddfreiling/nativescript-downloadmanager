@@ -3,142 +3,172 @@ import * as http from 'tns-core-modules/http';
 import * as appSettings from 'tns-core-modules/application-settings';
 import * as utils from 'tns-core-modules/utils/utils';
 
-import {Common} from './downloadmanager.common';
-import {DownloadRequest, DownloadState, DownloadStatus} from './downloadmanager.types';
+import { Common } from './downloadmanager.common';
+import { DownloadRequest, DownloadState, DownloadStatus } from './downloadmanager.types';
 export * from './downloadmanager.types';
 
-export interface DownloadTaskIOS {
+export class DownloadTaskIOS {
   refId: number;
   request: DownloadRequest;
   state: DownloadState;
   latestProgress: HWIFileDownloadProgress;
   reason: string;
+  downloadStartTimestamp: number;
 }
 
 const DOWNLOADMANAGER_PERSISTANCE_KEY = 'TNS_NOTA_DOWNLOADMANAGER_IOS';
+const FINISHED_TASK_TIMEOUT = 1000 * 60 * 60 * 24 * 7; //1 week
 
 export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDownloadDelegate {
 
   public static ObjCProtocols = [ HWIFileDownloadDelegate ];
-  private man: DownloadManager;
-  private activityCount = 0;
-  private _sessionConfig: NSURLSessionConfiguration;
+  
+  private man: WeakRef<DownloadManager>;
+  private activityCount: number;
 
-  public init() {
-    let self = super.init();
-    return self;
+  public static alloc(): HWIFileDownloadDelegateImpl {
+    return <HWIFileDownloadDelegateImpl>super.alloc();
   }
-
-  public initWithDownloadManager(man: DownloadManager) {
+  
+  public initWithDownloadManager(man: DownloadManager): HWIFileDownloadDelegateImpl {
     let self = super.init();
-    this.man = man;
+    this.man = new WeakRef(man);
+    this.activityCount = 0;
     return self;
-  }
-
-  get sessionConfig() {
-    return this._sessionConfig;
   }
 
   /**
    * Required delegate functions
    */
 
-  incrementNetworkActivityIndicatorActivityCount(): void {
+  public incrementNetworkActivityIndicatorActivityCount(): void {
     ++this.activityCount;
     this.updateNetworkActivityIndicatorVisibility();
   }
 
-  decrementNetworkActivityIndicatorActivityCount(): void {
+  public decrementNetworkActivityIndicatorActivityCount(): void {
     --this.activityCount;
     this.updateNetworkActivityIndicatorVisibility();
   }
 
-  downloadDidCompleteWithIdentifierLocalFileURL(aDownloadIdentifier: string, aLocalFileURL: NSURL): void {
-    this.man._log(`HWI.downloadDidComplete: ${aDownloadIdentifier} -> ${aLocalFileURL.absoluteString}`);
-    this.updateTaskProgress(aDownloadIdentifier, DownloadState.SUCCESFUL);
+  public downloadDidCompleteWithIdentifierLocalFileURL(aDownloadIdentifier: string, aLocalFileURL: NSURL): void {
+    this._log(`HWI.downloadDidComplete: ${aDownloadIdentifier} -> ${aLocalFileURL.absoluteString}`);
+    const man = this.man.get();
+    if (man) {
+      man.updateTaskState(aDownloadIdentifier, DownloadState.SUCCESFUL);
+    }
   }
 
-  downloadFailedWithIdentifierErrorHttpStatusCodeErrorMessagesStackResumeData(aDownloadIdentifier: string, anError: NSError, aHttpStatusCode: number, anErrorMessagesStack: NSArray<string>, aResumeData: NSData): void {
-    this.man._log(`HWI.downloadDidFail: refId=${aDownloadIdentifier}, statuscode=${aHttpStatusCode}, errorDesc=${anError.localizedDescription}`);
-    this.updateTaskProgress(aDownloadIdentifier, DownloadState.FAILED, undefined, anError.localizedDescription);
+  public downloadFailedWithIdentifierErrorHttpStatusCodeErrorMessagesStackResumeData(aDownloadIdentifier: string, anError: NSError, aHttpStatusCode: number, anErrorMessagesStack: NSArray<string>, aResumeData: NSData): void {
+    this._log(`HWI.downloadDidFail: refId=${aDownloadIdentifier}, statuscode=${aHttpStatusCode}, errorDesc=${anError.localizedDescription}`);
+    const man = this.man.get();
+    if (man) {
+      man.updateTaskState(aDownloadIdentifier, DownloadState.FAILED, anError.localizedDescription);
+    }
   }
 
   /**
    * Optional delegate functions
    */
 
-  customizeBackgroundSessionConfiguration?(aBackgroundSessionConfiguration: NSURLSessionConfiguration): void {
-    this.man._log(`HWI: customizeBackgroundSessionConfiguration`);
-    this._sessionConfig = aBackgroundSessionConfiguration;
-    // Can set additional headers or disallow cellular data usage here
+  public customizeBackgroundSessionConfiguration?(aBackgroundSessionConfiguration: NSURLSessionConfiguration): void {
+    this._log(`HWI: customizeBackgroundSessionConfiguration`);
+    // Defaults to allowing cellular access. This can be changed for each request in 'urlRequestForRemoteURL'.
+    aBackgroundSessionConfiguration.allowsCellularAccess = true;
+    // Can set additional headers or disallow cellular data usage here.
+    // This can only be done here, config is copied into NSURLSession after this call.
     // see https://developer.apple.com/reference/foundation/nsurlsessionconfiguration
   }
 
-  downloadPausedWithIdentifierResumeData?(aDownloadIdentifier: string, aResumeData: NSData): void {
-    this.man._log(`HWI: downloadDidPause: ${aDownloadIdentifier}, resumeData: ${aResumeData}`);
-    this.updateTaskProgress(aDownloadIdentifier, DownloadState.PAUSED);
+  public downloadPausedWithIdentifierResumeData?(aDownloadIdentifier: string, aResumeData: NSData): void {
+    this._log(`HWI: downloadDidPause: ${aDownloadIdentifier}, resumeData: ${aResumeData}`);
+    const man = this.man.get();
+    if (man) {
+      man.updateTaskState(aDownloadIdentifier, DownloadState.PAUSED);
+    }
   }
 
-  downloadProgressChangedForIdentifier?(aDownloadIdentifier: string): void {
-    const progress: HWIFileDownloadProgress = this.man.hwi.downloadProgressForIdentifier(aDownloadIdentifier);
-    this.updateTaskProgress(aDownloadIdentifier, DownloadState.RUNNING, progress);
+  public downloadProgressChangedForIdentifier?(aDownloadIdentifier: string): void {
+    const man = this.man.get();
+    if (man) {
+      man.updateTaskProgress(aDownloadIdentifier);
+    }
   }
 
-  localFileURLForIdentifierRemoteURL?(aDownloadIdentifier: string, aRemoteURL: NSURL): NSURL {
-    this.man._log(`HWI.localFileURLForIdentifierRemoteURL: refId=${aDownloadIdentifier}, url=${aRemoteURL.path}`);
-    const task = this.man.getTaskByRefId(aDownloadIdentifier);
-    if (task) {
-      const destPath = task.request.destinationLocalUri;
-      this.man._log(`Downloaded file destination path: ${destPath}`);
+  public localFileURLForIdentifierRemoteURL?(aDownloadIdentifier: string, aRemoteURL: NSURL): NSURL {
+    this._log(`HWI.localFileURLForIdentifierRemoteURL: refId=${aDownloadIdentifier}, url=${aRemoteURL.path}`);
+    const destPath = this.getDestinationLocalURI(aDownloadIdentifier);
+    if (destPath) {
+      this._log(`Downloaded file destination path: ${destPath}`);
       try {
         const destFolderPath = destPath.substr(0, destPath.lastIndexOf('/'));
         if (!fs.Folder.exists(destFolderPath)) {
-          this.man._log(`Creating folders for path: ${destFolderPath}`);
+          this._log(`Creating folders for path: ${destFolderPath}`);
           // Implicitly ensuring folder is created when using Folder.fromPath
-
           fs.Folder.fromPath(destFolderPath);
         }
       } catch (err) {
-        this.man._log(`ERROR creating folder: ${err}`);
+        this._log(`ERROR creating folder: ${err}`);
       }
-      const cacheRelativePath = task.request.destinationLocalUri.replace(fs.knownFolders.temp().path, '');
-      this.man._log(`Saving to path relative to cache/temp folder: ${cacheRelativePath}`);
+      const cacheRelativePath = destPath.replace(fs.knownFolders.temp().path, '');
+      this._log(`Saving to path relative to cache/temp folder: ${cacheRelativePath}`);
 
       const paths = NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory.CachesDirectory, NSSearchPathDomainMask.UserDomainMask, true);
       const cacheDir = paths.objectAtIndex(0);
       return NSURL.fileURLWithPathIsDirectory(cacheDir, true).URLByAppendingPathComponent(cacheRelativePath);
     } else {
-      this.man._log(`Error: no task matching refId=${aDownloadIdentifier}, cannot provide any localFileURL to save it to`);
+      this._log(`Error: no task matching refId=${aDownloadIdentifier}, cannot provide localFileURL to save it to`);
     }
-
     return null;
   }
 
-  resumeDownloadWithIdentifier?(aDownloadIdentifier: string): void {
-    this.man._log(`HWI.resumeDownloadWithIdentifier: refId=${aDownloadIdentifier}`);
+  public resumeDownloadWithIdentifier?(aDownloadIdentifier: string): void {
+    this._log(`HWI.resumeDownloadWithIdentifier: refId=${aDownloadIdentifier}`);
   }
   // downloadAtLocalFileURLIsValidForDownloadIdentifier?(aLocalFileURL: NSURL, aDownloadIdentifier: string): boolean;
   // httpStatusCodeIsValidForDownloadIdentifier?(aHttpStatusCode: number, aDownloadIdentifier: string): boolean;
-  // onAuthenticationChallengeDownloadIdentifierCompletionHandler?(aChallenge: NSURLAuthenticationChallenge, aDownloadIdentifier: string, aCompletionHandler: (p1: NSURLCredential, p2: NSURLSessionAuthChallengeDisposition) => void): void;
-  // rootProgress?(): NSProgress;
-  // urlRequestForRemoteURL?(aRemoteURL: NSURL): NSURLRequest;
+  public onAuthenticationChallengeDownloadIdentifierCompletionHandler?(aChallenge: NSURLAuthenticationChallenge, aDownloadIdentifier: string, aCompletionHandler: (p1: NSURLCredential, p2: NSURLSessionAuthChallengeDisposition) => void): void {
+    this._log(`HWI.onAuthenticationChallenge for refId: ${aDownloadIdentifier}`);
 
-  private updateTaskProgress(refId: string, state: DownloadState, progress?: HWIFileDownloadProgress, reason?: string) {
-    const task = this.man.getTaskByRefId(refId);
+  }
+  // rootProgress?(): NSProgress;
+  public urlRequestForRemoteURL?(aRemoteURL: NSURL): NSURLRequest {
+    this._log(`HWI.urlRequestForRemoteURL for URL: ${aRemoteURL.absoluteString}`);
+    const urlReq = NSMutableURLRequest.requestWithURL(aRemoteURL);
+    const task = this.man.get() ? this.man.get().getTaskByURL(aRemoteURL.absoluteString) : null;
     if (task) {
-      task.state = state;
-      if (progress) {
-        task.latestProgress = progress;
-      }
-      if (reason) {
-        task.reason = reason;
+      urlReq.allowsCellularAccess = task.request.allowedOverMetered;
+      if (task.request.extraHeaders) {
+        for (const headerKey in task.request.extraHeaders) {
+          urlReq.addValueForHTTPHeaderField(task.request.extraHeaders[headerKey], headerKey);
+        }
       }
     }
+    return urlReq;
+  }
+
+  /**
+   * Helpers
+   */
+
+  private getDestinationLocalURI(refId: string): string {
+    const man = this.man.get();
+    if (!man) {
+      return null;
+    }
+    const task = man.getTaskByRefId(refId);
+    return task ? task.request.destinationLocalUri : null;
   }
 
   private updateNetworkActivityIndicatorVisibility() {
     const sharedApp = utils.ios.getter(UIApplication, UIApplication.sharedApplication);
     sharedApp.networkActivityIndicatorVisible = (this.activityCount > 0);
+  }
+
+  private _log(logStr: string) {
+    if (this.man.get()) {
+      this.man.get()._log(logStr);
+    }
   }
 }
 
@@ -151,6 +181,7 @@ export class DownloadManager extends Common {
   constructor(debugOutputEnabled = false) {
     super(debugOutputEnabled);
     this.delegate = (<HWIFileDownloadDelegateImpl>HWIFileDownloadDelegateImpl.alloc()).initWithDownloadManager(this);
+    this.delegate = HWIFileDownloadDelegateImpl.alloc().initWithDownloadManager(this);
     this.hwi = HWIFileDownloader.alloc().initWithDelegateMaxConcurrentDownloads(this.delegate, 5);
     this.hwi.setupWithCompletion(() => {
       this._log(`DownloadManager - HWI setup completed!`);
@@ -160,23 +191,44 @@ export class DownloadManager extends Common {
     this.cleanUpFinishedTasks();
   }
 
-  private persistCurrentTasks() {
-    appSettings.setString(DOWNLOADMANAGER_PERSISTANCE_KEY, JSON.stringify(this.currentTasks));
-    this._log(`Persisted ${Object.keys(this.currentTasks).length} tasks`);
-  }
-
-  private loadPersistedTasks() {
-    this.currentTasks = JSON.parse(appSettings.getString(DOWNLOADMANAGER_PERSISTANCE_KEY, '{}'));
-    this._log(`Loaded ${Object.keys(this.currentTasks).length} persisted tasks`);
-  }
-
   // Used by HWI delegate
-  getTaskByRefId(refId: string): DownloadTaskIOS {
+  public getTaskByRefId(refId: string): DownloadTaskIOS {
     return this.currentTasks[refId];
+  }
+
+  public getTaskByURL(url: string): DownloadTaskIOS {
+    console.log(`getTaskByURL: ${url}`);
+    for (const refId in this.currentTasks) {
+      console.log(`compare ${url} to ${this.currentTasks[+refId].request.url}`);
+      if (this.currentTasks[+refId].request.url === url) {
+        return this.currentTasks[refId];
+      }
+    }
+    return null;
+  }
+
+  public updateTaskProgress(refId: string) {
+    const task = this.getTaskByRefId(refId);
+    if (task) {
+      if (task.state !== DownloadState.RUNNING) {
+        this.updateTaskState(refId, DownloadState.RUNNING);
+      }
+      task.latestProgress = this.hwi.downloadProgressForIdentifier(refId);
+    }
+  }
+
+  public updateTaskState(refId: string, state: DownloadState, reason = 'none') {
+    this._log(`Update task: refId=${refId} state=${state}, reason=${reason}`);
+    const task = this.getTaskByRefId(refId);
+    if (task) {
+      task.state = state;
+      task.reason = reason;
+    }
+    this.persistCurrentTasks();
   }
   // END Used by HWI delegate
 
-  downloadFile(request: DownloadRequest): Promise<number> {
+  public downloadFile(request: DownloadRequest): Promise<number> {
     const destPath = request.destinationLocalUri;
     const tempFolder: fs.Folder = fs.knownFolders.temp();
     const tempOffsetIndex = destPath.indexOf(tempFolder.path);
@@ -188,9 +240,6 @@ export class DownloadManager extends Common {
         return Promise.reject(`Download destination already exists and could not remove existing file. ${err}`);
       });
     }
-    if (this.delegate.sessionConfig) {
-      this.delegate.sessionConfig.allowsCellularAccess = request.allowedOverMetered;
-    }
 
     const refId: number = this.getNextRefId();
     this._log(`submit download with refId=${refId}, url=${request.url} destination=${request.destinationLocalUri}`);
@@ -200,19 +249,15 @@ export class DownloadManager extends Common {
       latestProgress: null,
       state: DownloadState.PENDING,
       reason: 'none',
+      downloadStartTimestamp: Number(new Date())
     };
-    this.hwi.startDownloadWithIdentifierFromRemoteURL('' + refId, NSURL.URLWithString(request.url));
-
     this.currentTasks[refId] = task;
     this.persistCurrentTasks();
+    this.hwi.startDownloadWithIdentifierFromRemoteURL('' + refId, NSURL.URLWithString(request.url));
     return Promise.resolve(refId);
   }
 
-  getNextRefId(): number {
-    return Object.keys(this.currentTasks).reduce((prev, cur, index) => Math.max(prev, +cur), 0) + 1;
-  }
-
-  isDownloadInProgress(refId: number): boolean {
+  public isDownloadInProgress(refId: number): boolean {
     const task = this.currentTasks[refId];
     try {
       return task && super.isDownloadInProgress(refId) && this.hwi.isDownloadingIdentifier(task.request.url);
@@ -222,7 +267,7 @@ export class DownloadManager extends Common {
     }
   }
 
-  getDownloadStatus(refId: number): DownloadStatus {
+  public getDownloadStatus(refId: number): DownloadStatus {
     const task = this.currentTasks[refId];
     if (task) {
       const status = {
@@ -240,7 +285,7 @@ export class DownloadManager extends Common {
     return null;
   }
 
-  getDownloadsInProgress(): number[] {
+  public getDownloadsInProgress(): number[] {
     const refIdsInProgress: number[] = [];
     for (const key in this.currentTasks) {
       const refId: number = +key;
@@ -251,7 +296,7 @@ export class DownloadManager extends Common {
     return refIdsInProgress;
   }
 
-  getExternalFilesDirPath(): string {
+  public getExternalFilesDirPath(): string {
     // temp/cache directory is where large files are stored on iOS. These will NOT be synced to iCloud.
     // see https://developer.apple.com/icloud/documentation/data-storage/index.html
     // TODO: Should we set ExcludedFromBackup flag?
@@ -259,11 +304,11 @@ export class DownloadManager extends Common {
     return fs.knownFolders.temp().path;
   }
 
-  getPrivateFilesDirPath(): string {
+  public getPrivateFilesDirPath(): string {
     return fs.knownFolders.documents().path;
   }
 
-  getSizeOfFile(localFilePath: string): number {
+  public getSizeOfFile(localFilePath: string): number {
     try {
       const fileMan = utils.ios.getter(NSFileManager, NSFileManager.defaultManager);
       const dict = fileMan.attributesOfItemAtPathError(localFilePath);
@@ -275,7 +320,7 @@ export class DownloadManager extends Common {
     }
   }
 
-  cancelDownloads(...refIds: number[]): void {
+  public cancelDownloads(...refIds: number[]): void {
     for (const refId of refIds) {
       try {
         this.hwi.cancelDownloadWithIdentifier('' + refId);
@@ -287,7 +332,7 @@ export class DownloadManager extends Common {
     this.persistCurrentTasks();
   }
 
-  cancelAllDownloads(): void {
+  public cancelAllDownloads(): void {
     for (const refId in this.currentTasks) {
       try {
         this.hwi.cancelDownloadWithIdentifier(refId);
@@ -299,14 +344,14 @@ export class DownloadManager extends Common {
     this.persistCurrentTasks();
   }
 
-  getAvailableDiskSpaceInBytes(): number {
+  public getAvailableDiskSpaceInBytes(): number {
     const fileMan: NSFileManager = utils.ios.getter(NSFileManager, NSFileManager.defaultManager);
     const paths = NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory.DocumentDirectory, NSSearchPathDomainMask.UserDomainMask, true);
     const fileSystemAttDict = fileMan.attributesOfFileSystemForPathError(paths.lastObject);
     return fileSystemAttDict.objectForKey(NSFileSystemFreeSize);
   }
 
-  destroy(): void {
+  public destroy(): void {
     this.persistCurrentTasks();
     this.hwi.dealloc();
     this.hwi = null;
@@ -314,16 +359,39 @@ export class DownloadManager extends Common {
     this.delegate = null;
     this.currentTasks = null;
   }
+  
+  private persistCurrentTasks() {
+    appSettings.setString(DOWNLOADMANAGER_PERSISTANCE_KEY, JSON.stringify(this.currentTasks));
+    this._log(`Persisted ${Object.keys(this.currentTasks).length} tasks`);
+  }
+
+  private loadPersistedTasks() {
+    this.currentTasks = JSON.parse(appSettings.getString(DOWNLOADMANAGER_PERSISTANCE_KEY, '{}'));
+    this._log(`Loaded ${Object.keys(this.currentTasks).length} persisted tasks`);
+  }
+  
+  private getNextRefId(): number {
+    return Object.keys(this.currentTasks).reduce((prev, cur) => Math.max(prev, +cur), 0) + 1;
+  }
 
   private cleanUpFinishedTasks() {
+    let didRemoveTask = false;
     for (const key in this.currentTasks) {
       const refId: number = +key;
       const task: DownloadTaskIOS = this.currentTasks[refId];
 
-      if (!this.isInProgress(task.state)) {
-        this._log(`DownloadMan: cleaning task no longer in-progress, for refId=${refId}, url=${task.request.url}`);
+      // Finished or failed tasks are cleaned up after FINISHED_TASK_TIMEOUT has passed
+      const dateDiffMillis = Number(new Date) - task.downloadStartTimestamp;
+
+      if (!this.isInProgress(task.state) && dateDiffMillis > FINISHED_TASK_TIMEOUT) {
+        const oldDate = new Date(task.downloadStartTimestamp);
+        this._log(`Cleaned old task: refId=${refId}, url=${task.request.url}, date=${oldDate.toDateString()}`);
         delete this.currentTasks[refId];
+        didRemoveTask = true;
       }
+    }
+    if (didRemoveTask) {
+      this.persistCurrentTasks();
     }
   }
 }

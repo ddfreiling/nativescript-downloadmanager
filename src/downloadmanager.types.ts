@@ -4,6 +4,7 @@ export class DownloadRequest {
   extraHeaders: { [key: string]: string } = {};
   allowedOverMetered: boolean = false;
   showNotification: boolean = false;
+
   notificationTitle: string;
   notificationDescription: string;
 
@@ -73,6 +74,8 @@ export declare class DownloadManager {
    * Gets a detailed DownloadStatus for a given reference ID
    */
   getDownloadStatus(refId: number): DownloadStatus;
+  // pauseDownload(refId: number): any;
+  // resumeDownload(resumeToken: any): boolean;
   /**
    * Cancels downloads based on one or more reference IDs
    */
@@ -99,6 +102,7 @@ export declare class DownloadManager {
    * Gets the size of a local file in bytes
    */
   getSizeOfFile(localFilePath: string): number;
+  iosSetBackgroundSessionCompletionHandler(sessionIdentifier: string, completionHandler: () => void): void;
   /**
    * Clean up any resources or subscriptions held
    */

@@ -33,6 +33,7 @@ export declare class DownloadManager {
     android: any;
     ios: any;
     debugOutputEnabled: boolean;
+    constructor(debugOutputEnabled?: boolean);
     /**
      * Downloads a single file using a DownloadRequest
      * @return Promise<number> with reference ID to the started download
@@ -84,6 +85,7 @@ export declare class DownloadManager {
      * Gets the size of a local file in bytes
      */
     getSizeOfFile(localFilePath: string): number;
+    iosSetBackgroundSessionCompletionHandler(sessionIdentifier: string, completionHandler: () => void): void;
     /**
      * Clean up any resources or subscriptions held
      */

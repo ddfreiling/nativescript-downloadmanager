@@ -106,9 +106,13 @@ declare class HWIFileDownloader extends NSObject {
 
 	static new(): HWIFileDownloader; // inherited from NSObject
 
+	readonly backgroundSessionIdentifier: string;
+
 	constructor(o: { delegate: NSObject; });
 
 	constructor(o: { delegate: NSObject; maxConcurrentDownloads: number; });
+
+	constructor(o: { delegate: NSObject; maxConcurrentDownloads: number; backgroundSessionIdentifier: string; });
 
 	cancelDownloadWithIdentifier(aDownloadIdentifier: string): void;
 
@@ -119,6 +123,8 @@ declare class HWIFileDownloader extends NSObject {
 	initWithDelegate(aDelegate: NSObject): this;
 
 	initWithDelegateMaxConcurrentDownloads(aDelegate: NSObject, aMaxConcurrentFileDownloadsCount: number): this;
+
+	initWithDelegateMaxConcurrentDownloadsBackgroundSessionIdentifier(aDelegate: NSObject, aMaxConcurrentFileDownloadsCount: number, aBackgroundSessionIdentifier: string): this;
 
 	isDownloadingIdentifier(aDownloadIdentifier: string): boolean;
 

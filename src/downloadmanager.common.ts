@@ -46,6 +46,10 @@ export abstract class Common implements DownloadManager {
   public abstract getAvailableDiskSpaceInBytes(): number;
   public abstract destroy();
 
+  public iosSetBackgroundSessionCompletionHandler(sessionIdentifier: string, completionHandler: () => void): void {
+    this._log(`WARNING: iosSetBackgroundSessionCompletionHandler not implemented`);
+  }
+
   public _log(logStr: string) {
     if (this.debugOutputEnabled) {
       let platform = isIOS ? 'iOS' : 'Android';

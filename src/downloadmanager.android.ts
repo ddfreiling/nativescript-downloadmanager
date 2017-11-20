@@ -25,6 +25,7 @@ export class DownloadManager extends Common {
       this._downloadManager = app.android.context.getSystemService(android.content.Context.DOWNLOAD_SERVICE);
       // First time using the DownloadService, as good a time as any,
       // to make sure we have a .nomedia file at app storage root.
+      // TODO: Remove this, up to the plugin client.
       const noMediaFile = new java.io.File(this.getExternalFilesDirPath(), '.nomedia');
       if (!noMediaFile.exists()) {
         noMediaFile.createNewFile();
@@ -99,6 +100,10 @@ export class DownloadManager extends Common {
     } else {
       return stats.getAvailableBlocks() * stats.getBlockSize();
     }
+  }
+
+  iosSetBackgroundSessionCompletionHandler(completionHandler: any): void {
+    this._log(`WARNING: iosSetBackgroundSessionCompletionHandler should only be called on iOS`);
   }
 
   destroy() {
@@ -198,7 +203,7 @@ function getReason(cursor: android.database.ICursor): string {
     return reasons.get(reasonIndex);
   }
 
-  return 'placeholder';
+  return 'none';
 }
 
 function getDownloadInfoLong(manager: android.app.DownloadManager, refId: number, colName: string): number {
