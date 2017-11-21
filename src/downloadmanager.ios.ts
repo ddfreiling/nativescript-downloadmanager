@@ -18,14 +18,15 @@ export class DownloadTaskIOS {
 
 const DOWNLOADMANAGER_PERSISTANCE_KEY = 'TNS_NOTA_DOWNLOADMANAGER_IOS';
 const FINISHED_TASK_RETENTION_MS = 1000 * 60 * 60 * 24 * 7; //1 week
+const NETWORK_ACTIVITY_TIMEOUT_MS = 5000;
 
 export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDownloadDelegate {
-  networkActivityTimeout: any;
 
   public static ObjCProtocols = [ HWIFileDownloadDelegate ];
   
   private static NETWORK_ACTIVITY_END_DELAY = 5000;
   private man: WeakRef<DownloadManager>;
+  private isShowingNetworkActivity = false;
 
   public static alloc(): HWIFileDownloadDelegateImpl {
     return <HWIFileDownloadDelegateImpl>super.alloc();
@@ -52,6 +53,9 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
     const man = this.man.get();
     if (man) {
       man.updateTaskState(aDownloadIdentifier, DownloadState.SUCCESFUL);
+      if (man.getDownloadsInProgress().length === 0) {
+        this.setNetworkActivityIndicatorVisible(false);
+      }
     }
   }
 
@@ -60,6 +64,9 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
     const man = this.man.get();
     if (man) {
       man.updateTaskState(aDownloadIdentifier, DownloadState.FAILED, anError.localizedDescription);
+      if (man.getDownloadsInProgress().length === 0) {
+        this.setNetworkActivityIndicatorVisible(false);
+      }
     }
   }
 
@@ -86,12 +93,14 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
     }
   }
 
+  private networkActivityTimeout: number;
+
   public downloadProgressChangedForIdentifier?(aDownloadIdentifier: string): void {
     const man = this.man.get();
     if (man) {
       man.updateTaskProgress(aDownloadIdentifier);
     }
-    this.temporarilyShowNetworkActivityIndicator();
+    this.tempShowNetworkActivityIndicator();
   }
 
   public localFileURLForIdentifierRemoteURL?(aDownloadIdentifier: string, aRemoteURL: NSURL): NSURL {
@@ -135,6 +144,7 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
     const task = this.man.get() ? this.man.get().getTaskByURL(aRemoteURL.absoluteString) : null;
     if (task) {
       urlReq.allowsCellularAccess = task.request.allowedOverMetered;
+      this._log(`HWI.urlRequestForRemoteURL allowsCellularAccess=${urlReq.allowsCellularAccess}`);
       if (task.request.extraHeaders) {
         for (const headerKey in task.request.extraHeaders) {
           urlReq.addValueForHTTPHeaderField(task.request.extraHeaders[headerKey], headerKey);
@@ -160,18 +170,22 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
     return task ? task.request.destinationLocalUri : null;
   }
 
-  private temporarilyShowNetworkActivityIndicator() {
-    if (this.networkActivityTimeout) {
-      clearTimeout(this.networkActivityTimeout);
-      this.networkActivityTimeout = null;
+  private tempShowNetworkActivityIndicator() {
+    if (this.isShowingNetworkActivity) {
+      if (this.networkActivityTimeout) {
+        clearTimeout(this.networkActivityTimeout);
+      }
+      this.networkActivityTimeout = setTimeout(() => {
+        this.setNetworkActivityIndicatorVisible(false);
+      }, NETWORK_ACTIVITY_TIMEOUT_MS);
+    } else {
+      this.setNetworkActivityIndicatorVisible(true);
     }
-    this.setNetworkActivityIndicatorVisible(true);
-    this.networkActivityTimeout = setTimeout(() => {
-      this.setNetworkActivityIndicatorVisible(false);
-    }, HWIFileDownloadDelegateImpl.NETWORK_ACTIVITY_END_DELAY);
   }
 
   private setNetworkActivityIndicatorVisible(visible: boolean) {
+    this._log(`setNetworkActivityIndicatorVisible = ${visible}`);
+    this.isShowingNetworkActivity = visible;
     const sharedApp = utils.ios.getter(UIApplication, UIApplication.sharedApplication);
     sharedApp.networkActivityIndicatorVisible = visible;
   }
