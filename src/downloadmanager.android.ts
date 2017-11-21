@@ -1,5 +1,5 @@
-import * as app from "tns-core-modules/application";
-import * as platform from "tns-core-modules/platform";
+import * as app from 'tns-core-modules/application';
+import * as platform from 'tns-core-modules/platform';
 
 import {Common} from './downloadmanager.common';
 import {DownloadRequest, DownloadState, DownloadStatus} from './downloadmanager.types';
