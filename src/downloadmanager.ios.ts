@@ -197,7 +197,7 @@ export class DownloadManager extends Common {
     this.delegate = HWIFileDownloadDelegateImpl.alloc().initWithDownloadManager(this);
     this.hwi = HWIFileDownloader.alloc().initWithDelegateMaxConcurrentDownloads(this.delegate, 5);
     this.ios = this.hwi;
-    this.isReadyPromise = new Promise((resolve) => {
+    this.isReadyPromise = new Promise<void>((resolve) => {
       this.hwi.setupWithCompletion(() => {
         this._log(`HWI.setup completed!`);
         this.loadPersistedTasks();
@@ -248,7 +248,7 @@ export class DownloadManager extends Common {
   }
   // END Used by HWI delegate
 
-  public async downloadFile(request: DownloadRequest): Promise<number> {
+  public downloadFile(request: DownloadRequest): Promise<number> {
     return this.isReadyPromise.then(() => {
       const destPath = request.destinationLocalUri;
       const tempFolder: fs.Folder = fs.knownFolders.temp();
