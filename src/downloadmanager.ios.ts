@@ -136,6 +136,7 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
 
   public onAuthenticationChallengeDownloadIdentifierCompletionHandler?(aChallenge: NSURLAuthenticationChallenge, aDownloadIdentifier: string, aCompletionHandler: (p1: NSURLCredential, p2: NSURLSessionAuthChallengeDisposition) => void): void {
     this._log(`HWI.onAuthenticationChallenge refId=${aDownloadIdentifier}`);
+    aCompletionHandler(null, NSURLSessionAuthChallengeDisposition.PerformDefaultHandling);
   }
   
   public urlRequestForRemoteURL?(aRemoteURL: NSURL): NSURLRequest {
