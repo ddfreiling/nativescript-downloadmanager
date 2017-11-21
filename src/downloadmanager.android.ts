@@ -103,7 +103,7 @@ export class DownloadManager extends Common {
   }
 
   iosSetBackgroundSessionCompletionHandler(completionHandler: any): void {
-    this._log(`WARNING: iosSetBackgroundSessionCompletionHandler should only be called on iOS`);
+    this._log(`WARNING: iosSetBackgroundSessionCompletionHandler should not be called on Android`);
   }
 
   destroy() {

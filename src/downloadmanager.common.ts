@@ -2,8 +2,9 @@ import * as app from 'tns-core-modules/application';
 import { isIOS } from 'tns-core-modules/platform';
 import { DownloadManager, DownloadRequest, DownloadState, DownloadStatus } from './downloadmanager.types';
 
-
 export abstract class Common implements DownloadManager {
+
+  private static PLATFORM = isIOS ? 'iOS' : 'android';
 
   public android: any;
   public ios: any;
@@ -44,16 +45,12 @@ export abstract class Common implements DownloadManager {
   public abstract getDownloadStatus(refId: number): DownloadStatus;
   public abstract cancelDownloads(...refIds: number[]);
   public abstract getAvailableDiskSpaceInBytes(): number;
+  public abstract iosSetBackgroundSessionCompletionHandler(sessionIdentifier: string, completionHandler: () => void): void;
   public abstract destroy();
-
-  public iosSetBackgroundSessionCompletionHandler(sessionIdentifier: string, completionHandler: () => void): void {
-    this._log(`WARNING: iosSetBackgroundSessionCompletionHandler not implemented`);
-  }
 
   public _log(logStr: string) {
     if (this.debugOutputEnabled) {
-      let platform = isIOS ? 'iOS' : 'Android';
-      console.log(`tns-downloadmanager(${platform}): ${logStr}`);
+      console.log(`tns-downloadmanager(${Common.PLATFORM}): ${logStr}`);
     }
   }
 }
