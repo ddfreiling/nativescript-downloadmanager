@@ -23,13 +23,6 @@ export class DownloadManager extends Common {
   private get downloadManager(): android.app.DownloadManager {
     if (!this._downloadManager) {
       this._downloadManager = app.android.context.getSystemService(android.content.Context.DOWNLOAD_SERVICE);
-      // First time using the DownloadService, as good a time as any,
-      // to make sure we have a .nomedia file at app storage root.
-      // TODO: Remove this, up to the plugin client.
-      const noMediaFile = new java.io.File(this.getExternalFilesDirPath(), '.nomedia');
-      if (!noMediaFile.exists()) {
-        noMediaFile.createNewFile();
-      }
     }
     return this._downloadManager;
   }
