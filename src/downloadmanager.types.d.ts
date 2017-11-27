@@ -1,15 +1,68 @@
+/**
+ * Android specific download options.
+ */
+export interface AndroidDownloadRequestOptions {
+    /**
+     * Flag indicating whether a system notification should be shown for the download.
+     */
+    showNotification: boolean;
+    /**
+     * Title of the download notification, if enabled.
+     */
+    notificationTitle?: string;
+    /**
+     * Description text for the download notification, if enabled.
+     */
+    notificationDescription?: string;
+}
+/**
+ * iOS specific download options.
+ */
+export interface iOSDownloadRequestOptions {
+    /**
+     * Timeout for the download request.
+     * If idle time exceeds this, the download will fail.
+     */
+    timeout: number;
+}
 export declare class DownloadRequest {
+    /**
+     * URL to retrieve for the download request
+     */
     url: string;
+    /**
+     * Local destination path for the completed download.
+     */
     destinationLocalUri: string;
+    /**
+     * Extra request headers to send with the download.
+     */
     extraHeaders: {
         [key: string]: string;
     };
+    /**
+     * Flag setting whether downloading should be allowed over a metered (cellular) connection.
+     */
     allowedOverMetered: boolean;
-    showNotification: boolean;
-    notificationTitle: string;
-    notificationDescription: string;
+    /**
+     * iOS specific download options.
+     */
+    iosOptions: iOSDownloadRequestOptions;
+    /**
+     * Android specific download options.
+     */
+    androidOptions: AndroidDownloadRequestOptions;
     constructor(url: string, destinationLocalUri: string);
-    setNotification(title: string, description: string): void;
+    /**
+     * Convenience method to enable Android system download notification
+     * and setting its title and description.
+     */
+    androidSetNotification(title: string, description: string): void;
+    /**
+     * Adds a custom header to be sent with the download request.
+     * @param {string} name Name of the header
+     * @param {string} value Value of the header
+     */
     addHeader(name: string, value: string): void;
 }
 export declare enum DownloadState {

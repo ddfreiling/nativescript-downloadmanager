@@ -67,13 +67,14 @@ export class DownloadManager extends Common {
       // console.log(`Destination: ${localUri}`);
       // console.log(`ShowNoticicaiton: ${request.showNotification}`);
       const req = new android.app.DownloadManager.Request(android.net.Uri.parse(request.url));
-      if (!request.showNotification) {
-        // Permission needed to download without notification!
+      if (!request.androidOptions.showNotification) {
+        // This requires the following permission in AndroidManifest:
+        //   android.permission.DOWNLOAD_WITHOUT_NOTIFICATION
         req.setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_HIDDEN);
       }
-      req.setTitle(request.notificationTitle);
-      req.setDescription(request.notificationDescription);
-      req.setVisibleInDownloadsUi(false);
+      req.setTitle(request.androidOptions.notificationTitle);
+      req.setDescription(request.androidOptions.notificationDescription);
+      req.setVisibleInDownloadsUi(request.androidOptions.showNotification);
       for (let headerName in request.extraHeaders) {
         // console.log(`Adding header ${headerName}=${request.extraHeaders[headerName]}`);
         req.addRequestHeader(headerName, request.extraHeaders[headerName]);

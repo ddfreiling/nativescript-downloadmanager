@@ -31,6 +31,9 @@ export function onDownload() {
   const destinationPath = fs.path.join(fs.knownFolders.temp().path, 'dest.zip');
   const req = new DownloadRequest(downloadUrl, destinationPath);
   req.allowedOverMetered = true;
+  req.iosOptions.timeout = 240;
+  req.androidSetNotification('Download test #1', 'Dette er en lang beskrivelse af din download.');
+  req.androidOptions.notificationTitle = 'Download test #2';
   req.addHeader('LBS-User', '140345');
   req.addHeader('LBS-Token', 'LoremIpsum');
   downloadManager.downloadFile(req).then((refId) => {
@@ -42,7 +45,7 @@ export function onDownload() {
         model.set('downloadState', `refId=${refId},state=${status.state},bytes=${status.bytesDownloaded}/${status.bytesTotal}`);
       } else {
         model.set('downloadState', `refId=${refId},state=${status.state},reason=${status.reason}`);
-      }      
+      }
       model.set('progress', status.bytesTotal > 0 ? (status.bytesDownloaded / status.bytesTotal * 100) : 0);
       if (status.state === DownloadState.FAILED) {
         console.log(`Download FAILED! reason=${status.reason}`);

@@ -1,35 +1,95 @@
-export class DownloadRequest {
-  url: string;
-  destinationLocalUri: string;
-  extraHeaders: { [key: string]: string } = {};
-  allowedOverMetered: boolean = false;
-  showNotification: boolean = false;
+/**
+ * Android specific download options.
+ */
+export interface AndroidDownloadRequestOptions {
+  /**
+   * Flag indicating whether a system notification should be shown for the download.
+   */
+  showNotification: boolean;
+  /**
+   * Title of the download notification, if enabled.
+   */
+  notificationTitle?: string;
+  /**
+   * Description text for the download notification, if enabled.
+   */
+  notificationDescription?: string;
+}
 
-  notificationTitle: string;
-  notificationDescription: string;
+/**
+ * iOS specific download options.
+ */
+export interface iOSDownloadRequestOptions {
+  /**
+   * Timeout for the download request.
+   * If idle time exceeds this, the download will fail.
+   */
+  timeout: number;
+}
+
+export class DownloadRequest {
+  /**
+   * URL to retrieve for the download request
+   */
+  url: string;
+  /**
+   * Local destination path for the completed download.
+   */
+  destinationLocalUri: string;
+  /**
+   * Extra request headers to send with the download.
+   */
+  extraHeaders: { [key: string]: string } = {};
+  /**
+   * Flag setting whether downloading should be allowed over a metered (cellular) connection.
+   */
+  allowedOverMetered = false;
+
+  /**
+   * iOS specific download options.
+   */
+  iosOptions: iOSDownloadRequestOptions = {
+    timeout: 60
+  }
+
+  /**
+   * Android specific download options.
+   */
+  androidOptions: AndroidDownloadRequestOptions = {
+    showNotification: false
+  }
 
   constructor(url: string, destinationLocalUri: string) {
     this.url = url;
     this.destinationLocalUri = destinationLocalUri;
   }
 
-  setNotification(title: string, description: string): void {
-    this.showNotification = true;
-    this.notificationTitle = title;
-    this.notificationDescription = description;
+  /**
+   * Convenience method to enable Android system download notification
+   * and setting its title and description.
+   */
+  androidSetNotification(title: string, description: string): void {
+    this.androidOptions.showNotification = true;
+    this.androidOptions.notificationTitle = title;
+    this.androidOptions.notificationDescription = description;
   }
 
+  /**
+   * Adds a custom header to be sent with the download request.
+   * @param {string} name Name of the header
+   * @param {string} value Value of the header
+   */
   addHeader(name: string, value: string): void {
     this.extraHeaders[name] = value;
   }
 }
 
 export enum DownloadState {
-  PENDING = 1,
-  RUNNING = 2,
-  PAUSED = 4,
+  PENDING   = 1,
+  RUNNING   = 2,
+  PAUSED    = 4,
   SUCCESFUL = 8,
-  FAILED = 16,
+  FAILED    = 16,
 }
 
 export interface DownloadStatus {

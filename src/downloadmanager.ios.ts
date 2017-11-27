@@ -19,11 +19,12 @@ export class DownloadTaskIOS {
 const DOWNLOADMANAGER_PERSISTANCE_KEY = 'TNS_NOTA_DOWNLOADMANAGER_IOS';
 const FINISHED_TASK_RETENTION_MS = 1000 * 60 * 60 * 24 * 7; //1 week
 const NETWORK_ACTIVITY_TIMEOUT_MS = 5000;
+const DEFAULT_REQUEST_IDLE_TIMEOUT = 60;
 
 export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDownloadDelegate {
 
   public static ObjCProtocols = [ HWIFileDownloadDelegate ];
-  
+
   private static NETWORK_ACTIVITY_END_DELAY = 5000;
   private man: WeakRef<DownloadManager>;
   private isShowingNetworkActivity = false;
@@ -31,7 +32,7 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
   public static alloc(): HWIFileDownloadDelegateImpl {
     return <HWIFileDownloadDelegateImpl>super.alloc();
   }
-  
+
   public initWithDownloadManager(man: DownloadManager): HWIFileDownloadDelegateImpl {
     let self = super.init();
     this.man = new WeakRef(man);
@@ -80,6 +81,7 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
     // see https://developer.apple.com/reference/foundation/nsurlsessionconfiguration
     // We default to allowing cellular access, as it can then be disallowed on a per-request basis in 'urlRequestForRemoteURL'.
     aBackgroundSessionConfiguration.allowsCellularAccess = true;
+    aBackgroundSessionConfiguration.timeoutIntervalForRequest
     if (this.man.get()) {
       this.man.get().setSessionIdentifier(aBackgroundSessionConfiguration.identifier);
     }
@@ -138,14 +140,17 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
     this._log(`HWI.onAuthenticationChallenge refId=${aDownloadIdentifier}`);
     aCompletionHandler(null, NSURLSessionAuthChallengeDisposition.PerformDefaultHandling);
   }
-  
+
   public urlRequestForRemoteURL?(aRemoteURL: NSURL): NSURLRequest {
     this._log(`HWI.urlRequestForRemoteURL URL=${aRemoteURL.absoluteString}`);
     const urlReq = NSMutableURLRequest.requestWithURL(aRemoteURL);
     const task = this.man.get() ? this.man.get().getTaskByURL(aRemoteURL.absoluteString) : null;
     if (task) {
       urlReq.allowsCellularAccess = task.request.allowedOverMetered;
-      this._log(`HWI.urlRequestForRemoteURL allowsCellularAccess=${urlReq.allowsCellularAccess}`);
+      urlReq.timeoutInterval = task.request.iosOptions ?
+        task.request.iosOptions.timeout : DEFAULT_REQUEST_IDLE_TIMEOUT;
+      this._log(`HWI.urlRequestForRemoteURL timeout=${task.request.iosOptions.timeout} ` +
+                `allowsCellularAccess=${urlReq.allowsCellularAccess}`);
       if (task.request.extraHeaders) {
         for (const headerKey in task.request.extraHeaders) {
           urlReq.addValueForHTTPHeaderField(task.request.extraHeaders[headerKey], headerKey);
@@ -199,7 +204,7 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
 }
 
 export class DownloadManager extends Common {
-  
+
   public hwi: HWIFileDownloader;
   private delegate: HWIFileDownloadDelegateImpl;
   private currentTasks: { [refId: number]: DownloadTaskIOS } = {};
@@ -229,7 +234,6 @@ export class DownloadManager extends Common {
   }
 
   public getTaskByURL(url: string): DownloadTaskIOS {
-    this._log(`getTaskByURL: ${url}`);
     for (const refId in this.currentTasks) {
       if (this.currentTasks[+refId].request.url === url) {
         return this.currentTasks[refId];
@@ -276,7 +280,7 @@ export class DownloadManager extends Common {
           throw `Download destination already exists and could not remove existing file. ${err}`;
         });
       }
-  
+
       const refId: number = this.getNextRefId();
       this._log(`submit download: refId=${refId}, url=${request.url}, destination=${request.destinationLocalUri}`);
       const task = {
@@ -414,7 +418,7 @@ export class DownloadManager extends Common {
     this.delegate = null;
     this.currentTasks = null;
   }
-  
+
   private persistCurrentTasks() {
     appSettings.setString(DOWNLOADMANAGER_PERSISTANCE_KEY, JSON.stringify(this.currentTasks));
     this._log(`Persisted ${Object.keys(this.currentTasks).length} tasks`);
@@ -424,7 +428,7 @@ export class DownloadManager extends Common {
     this.currentTasks = JSON.parse(appSettings.getString(DOWNLOADMANAGER_PERSISTANCE_KEY, '{}'));
     this._log(`Loaded ${Object.keys(this.currentTasks).length} persisted tasks`);
   }
-  
+
   private getNextRefId(): number {
     return Object.keys(this.currentTasks).reduce((prev, cur) => Math.max(prev, +cur), 0) + 1;
   }
