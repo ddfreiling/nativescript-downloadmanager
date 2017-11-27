@@ -1,99 +1,99 @@
 
 interface HWIFileDownloadDelegate {
 
-	customizeBackgroundSessionConfiguration?(aBackgroundSessionConfiguration: NSURLSessionConfiguration): void;
+  customizeBackgroundSessionConfiguration?(aBackgroundSessionConfiguration: NSURLSessionConfiguration): void;
 
-	decrementNetworkActivityIndicatorActivityCount(): void;
+  decrementNetworkActivityIndicatorActivityCount(): void;
 
-	downloadAtLocalFileURLIsValidForDownloadIdentifier?(aLocalFileURL: NSURL, aDownloadIdentifier: string): boolean;
+  downloadAtLocalFileURLIsValidForDownloadIdentifier?(aLocalFileURL: NSURL, aDownloadIdentifier: string): boolean;
 
-	downloadDidCompleteWithIdentifierLocalFileURL(aDownloadIdentifier: string, aLocalFileURL: NSURL): void;
+  downloadDidCompleteWithIdentifierLocalFileURL(aDownloadIdentifier: string, aLocalFileURL: NSURL): void;
 
-	downloadFailedWithIdentifierErrorHttpStatusCodeErrorMessagesStackResumeData(aDownloadIdentifier: string, anError: NSError, aHttpStatusCode: number, anErrorMessagesStack: NSArray<string>, aResumeData: NSData): void;
+  downloadFailedWithIdentifierErrorHttpStatusCodeErrorMessagesStackResumeData(aDownloadIdentifier: string, anError: NSError, aHttpStatusCode: number, anErrorMessagesStack: NSArray<string>, aResumeData: NSData): void;
 
-	downloadPausedWithIdentifierResumeData?(aDownloadIdentifier: string, aResumeData: NSData): void;
+  downloadPausedWithIdentifierResumeData?(aDownloadIdentifier: string, aResumeData: NSData): void;
 
-	downloadProgressChangedForIdentifier?(aDownloadIdentifier: string): void;
+  downloadProgressChangedForIdentifier?(aDownloadIdentifier: string): void;
 
-	httpStatusCodeIsValidForDownloadIdentifier?(aHttpStatusCode: number, aDownloadIdentifier: string): boolean;
+  httpStatusCodeIsValidForDownloadIdentifier?(aHttpStatusCode: number, aDownloadIdentifier: string): boolean;
 
-	incrementNetworkActivityIndicatorActivityCount(): void;
+  incrementNetworkActivityIndicatorActivityCount(): void;
 
-	localFileURLForIdentifierRemoteURL?(aDownloadIdentifier: string, aRemoteURL: NSURL): NSURL;
+  localFileURLForIdentifierRemoteURL?(aDownloadIdentifier: string, aRemoteURL: NSURL): NSURL;
 
-	onAuthenticationChallengeDownloadIdentifierCompletionHandler?(aChallenge: NSURLAuthenticationChallenge, aDownloadIdentifier: string, aCompletionHandler: (p1: NSURLCredential, p2: NSURLSessionAuthChallengeDisposition) => void): void;
+  onAuthenticationChallengeDownloadIdentifierCompletionHandler?(aChallenge: NSURLAuthenticationChallenge, aDownloadIdentifier: string, aCompletionHandler: (p1: NSURLCredential, p2: NSURLSessionAuthChallengeDisposition) => void): void;
 
-	resumeDownloadWithIdentifier?(aDownloadIdentifier: string): void;
+  resumeDownloadWithIdentifier?(aDownloadIdentifier: string): void;
 
-	rootProgress?(): NSProgress;
+  rootProgress?(): NSProgress;
 
-	urlRequestForRemoteURL?(aRemoteURL: NSURL): NSURLRequest;
+  urlRequestForRemoteURL?(aRemoteURL: NSURL): NSURLRequest;
 }
 declare var HWIFileDownloadDelegate: {
 
-	prototype: HWIFileDownloadDelegate;
+  prototype: HWIFileDownloadDelegate;
 };
 
 declare class HWIFileDownloadItem extends NSObject {
 
-	static alloc(): HWIFileDownloadItem; // inherited from NSObject
+  static alloc(): HWIFileDownloadItem; // inherited from NSObject
 
-	static new(): HWIFileDownloadItem; // inherited from NSObject
+  static new(): HWIFileDownloadItem; // inherited from NSObject
 
-	bytesPerSecondSpeed: number;
+  bytesPerSecondSpeed: number;
 
-	downloadStartDate: Date;
+  downloadStartDate: Date;
 
-	readonly downloadToken: string;
+  readonly downloadToken: string;
 
-	errorMessagesStack: NSArray<string>;
+  errorMessagesStack: NSArray<string>;
 
-	expectedFileSizeInBytes: number;
+  expectedFileSizeInBytes: number;
 
-	finalLocalFileURL: NSURL;
+  finalLocalFileURL: NSURL;
 
-	lastHttpStatusCode: number;
+  lastHttpStatusCode: number;
 
-	readonly progress: NSProgress;
+  readonly progress: NSProgress;
 
-	receivedFileSizeInBytes: number;
+  receivedFileSizeInBytes: number;
 
-	resumedFileSizeInBytes: number;
+  resumedFileSizeInBytes: number;
 
-	readonly sessionDownloadTask: NSURLSessionDownloadTask;
+  readonly sessionDownloadTask: NSURLSessionDownloadTask;
 
-	readonly urlConnection: NSURLConnection;
+  readonly urlConnection: NSURLConnection;
 
-	constructor(o: { downloadToken: string; sessionDownloadTask: NSURLSessionDownloadTask; urlConnection: NSURLConnection; });
+  constructor(o: { downloadToken: string; sessionDownloadTask: NSURLSessionDownloadTask; urlConnection: NSURLConnection; });
 
-	initWithDownloadTokenSessionDownloadTaskUrlConnection(aDownloadToken: string, aSessionDownloadTask: NSURLSessionDownloadTask, aURLConnection: NSURLConnection): this;
+  initWithDownloadTokenSessionDownloadTaskUrlConnection(aDownloadToken: string, aSessionDownloadTask: NSURLSessionDownloadTask, aURLConnection: NSURLConnection): this;
 }
 
 declare class HWIFileDownloadProgress extends NSObject {
 
-	static alloc(): HWIFileDownloadProgress; // inherited from NSObject
+  static alloc(): HWIFileDownloadProgress; // inherited from NSObject
 
-	static new(): HWIFileDownloadProgress; // inherited from NSObject
+  static new(): HWIFileDownloadProgress; // inherited from NSObject
 
-	readonly bytesPerSecondSpeed: number;
+  readonly bytesPerSecondSpeed: number;
 
-	readonly downloadProgress: number;
+  readonly downloadProgress: number;
 
-	readonly estimatedRemainingTime: number;
+  readonly estimatedRemainingTime: number;
 
-	readonly expectedFileSize: number;
+  readonly expectedFileSize: number;
 
-	lastLocalizedAdditionalDescription: string;
+  lastLocalizedAdditionalDescription: string;
 
-	lastLocalizedDescription: string;
+  lastLocalizedDescription: string;
 
-	readonly nativeProgress: NSProgress;
+  readonly nativeProgress: NSProgress;
 
-	readonly receivedFileSize: number;
+  readonly receivedFileSize: number;
 
-	constructor(o: { downloadProgress: number; expectedFileSize: number; receivedFileSize: number; estimatedRemainingTime: number; bytesPerSecondSpeed: number; progress: NSProgress; });
+  constructor(o: { downloadProgress: number; expectedFileSize: number; receivedFileSize: number; estimatedRemainingTime: number; bytesPerSecondSpeed: number; progress: NSProgress; });
 
-	initWithDownloadProgressExpectedFileSizeReceivedFileSizeEstimatedRemainingTimeBytesPerSecondSpeedProgress(aDownloadProgress: number, anExpectedFileSize: number, aReceivedFileSize: number, anEstimatedRemainingTime: number, aBytesPerSecondSpeed: number, aProgress: NSProgress): this;
+  initWithDownloadProgressExpectedFileSizeReceivedFileSizeEstimatedRemainingTimeBytesPerSecondSpeedProgress(aDownloadProgress: number, anExpectedFileSize: number, aReceivedFileSize: number, anEstimatedRemainingTime: number, aBytesPerSecondSpeed: number, aProgress: NSProgress): this;
 }
 
 declare var HWIFileDownloadVersionNumber: number;
@@ -102,39 +102,39 @@ declare var HWIFileDownloadVersionString: interop.Reference<number>;
 
 declare class HWIFileDownloader extends NSObject {
 
-	static alloc(): HWIFileDownloader; // inherited from NSObject
+  static alloc(): HWIFileDownloader; // inherited from NSObject
 
-	static new(): HWIFileDownloader; // inherited from NSObject
+  static new(): HWIFileDownloader; // inherited from NSObject
 
-	readonly backgroundSessionIdentifier: string;
+  readonly backgroundSessionIdentifier: string;
 
-	constructor(o: { delegate: NSObject; });
+  constructor(o: { delegate: NSObject; });
 
-	constructor(o: { delegate: NSObject; maxConcurrentDownloads: number; });
+  constructor(o: { delegate: NSObject; maxConcurrentDownloads: number; });
 
-	constructor(o: { delegate: NSObject; maxConcurrentDownloads: number; backgroundSessionIdentifier: string; });
+  constructor(o: { delegate: NSObject; maxConcurrentDownloads: number; backgroundSessionIdentifier: string; });
 
-	cancelDownloadWithIdentifier(aDownloadIdentifier: string): void;
+  cancelDownloadWithIdentifier(aDownloadIdentifier: string): void;
 
-	downloadProgressForIdentifier(aDownloadIdentifier: string): HWIFileDownloadProgress;
+  downloadProgressForIdentifier(aDownloadIdentifier: string): HWIFileDownloadProgress;
 
-	hasActiveDownloads(): boolean;
+  hasActiveDownloads(): boolean;
 
-	initWithDelegate(aDelegate: NSObject): this;
+  initWithDelegate(aDelegate: NSObject): this;
 
-	initWithDelegateMaxConcurrentDownloads(aDelegate: NSObject, aMaxConcurrentFileDownloadsCount: number): this;
+  initWithDelegateMaxConcurrentDownloads(aDelegate: NSObject, aMaxConcurrentFileDownloadsCount: number): this;
 
-	initWithDelegateMaxConcurrentDownloadsBackgroundSessionIdentifier(aDelegate: NSObject, aMaxConcurrentFileDownloadsCount: number, aBackgroundSessionIdentifier: string): this;
+  initWithDelegateMaxConcurrentDownloadsBackgroundSessionIdentifier(aDelegate: NSObject, aMaxConcurrentFileDownloadsCount: number, aBackgroundSessionIdentifier: string): this;
 
-	isDownloadingIdentifier(aDownloadIdentifier: string): boolean;
+  isDownloadingIdentifier(aDownloadIdentifier: string): boolean;
 
-	isWaitingForDownloadOfIdentifier(aDownloadIdentifier: string): boolean;
+  isWaitingForDownloadOfIdentifier(aDownloadIdentifier: string): boolean;
 
-	setBackgroundSessionCompletionHandlerBlock(aBackgroundSessionCompletionHandlerBlock: () => void): void;
+  setBackgroundSessionCompletionHandlerBlock(aBackgroundSessionCompletionHandlerBlock: () => void): void;
 
-	setupWithCompletion(aSetupCompletionBlock: () => void): void;
+  setupWithCompletion(aSetupCompletionBlock: () => void): void;
 
-	startDownloadWithIdentifierFromRemoteURL(aDownloadIdentifier: string, aRemoteURL: NSURL): void;
+  startDownloadWithIdentifierFromRemoteURL(aDownloadIdentifier: string, aRemoteURL: NSURL): void;
 
-	startDownloadWithIdentifierUsingResumeData(aDownloadIdentifier: string, aResumeData: NSData): void;
+  startDownloadWithIdentifierUsingResumeData(aDownloadIdentifier: string, aResumeData: NSData): void;
 }

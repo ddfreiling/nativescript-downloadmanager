@@ -8,13 +8,13 @@ import * as fs from 'tns-core-modules/file-system';
 
 import { DownloadManager, DownloadRequest, DownloadStatus, DownloadState } from '@nota/nativescript-downloadmanager';
 
-var model: obs.Observable;
-var downloadManager: DownloadManager;
+let model: obs.Observable;
+let downloadManager: DownloadManager;
 
 // Event handler for Page "loaded" event attached in main-page.xml
 export function pageLoaded(args: obs.EventData) {
   // Get the event sender
-  var page = <pages.Page>args.object;
+  const page = <pages.Page>args.object;
   model = obs.fromObject({
     downloadState: '',
     progress: 0,
@@ -41,7 +41,7 @@ export function onDownload() {
     const progressInterval = setInterval(() => {
       const status = downloadManager.getDownloadStatus(refId);
       // console.log(`Download status: ${JSON.stringify(status)}`);
-      if (status.state == DownloadState.RUNNING) {
+      if (status.state === DownloadState.RUNNING) {
         model.set('downloadState', `refId=${refId},state=${status.state},bytes=${status.bytesDownloaded}/${status.bytesTotal}`);
       } else {
         model.set('downloadState', `refId=${refId},state=${status.state},reason=${status.reason}`);
@@ -67,7 +67,7 @@ export function onShowSpace() {
   console.log('onShowSpace');
   const res = downloadManager.getAvailableDiskSpaceInBytes();
   const gb = res / (1024 * 1024 * 1024);
-  model.set('spaceAvailable', Math.round(gb * 100) / 100); //round to 2 decimals
+  model.set('spaceAvailable', Math.round(gb * 100) / 100); // round to 2 decimals
   // model.notifyPropertyChange('spaceAvailable', model.spaceAvailable);
 }
 
@@ -82,7 +82,7 @@ function traceFolderTree(folder: fs.Folder, maxDepth: number = 3, depth: number 
     if (isFolder && depth < maxDepth) {
       try {
         traceFolderTree(fs.Folder.fromPath(ent.path), maxDepth, depth + 1);
-      } catch(err) {
+      } catch (err) {
         console.log(`${whitespace}  * (err accessing)`);
       }
     }
@@ -97,8 +97,7 @@ function traceJavaFolderTree(folder: any, maxDepth: number = 3, depth: number = 
   for (let i = 0; i < files.length; i++) {
     let file = files[i];
     console.log(`${whitespace}- ${file.getName()}`);
-    if (file.isDirectory() && depth < maxDepth)
-    {
+    if (file.isDirectory() && depth < maxDepth) {
       traceJavaFolderTree(file, maxDepth, depth + 1);
     }
   }

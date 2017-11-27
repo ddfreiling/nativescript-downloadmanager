@@ -17,7 +17,7 @@ export class DownloadTaskIOS {
 }
 
 const DOWNLOADMANAGER_PERSISTANCE_KEY = 'TNS_NOTA_DOWNLOADMANAGER_IOS';
-const FINISHED_TASK_RETENTION_MS = 1000 * 60 * 60 * 24 * 7; //1 week
+const FINISHED_TASK_RETENTION_MS = 1000 * 60 * 60 * 24 * 7; // 1 week
 const NETWORK_ACTIVITY_TIMEOUT_MS = 5000;
 const DEFAULT_REQUEST_IDLE_TIMEOUT = 60;
 
@@ -81,7 +81,7 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
     // see https://developer.apple.com/reference/foundation/nsurlsessionconfiguration
     // We default to allowing cellular access, as it can then be disallowed on a per-request basis in 'urlRequestForRemoteURL'.
     aBackgroundSessionConfiguration.allowsCellularAccess = true;
-    aBackgroundSessionConfiguration.timeoutIntervalForRequest
+    aBackgroundSessionConfiguration.timeoutIntervalForRequest;
     if (this.man.get()) {
       this.man.get().setSessionIdentifier(aBackgroundSessionConfiguration.identifier);
     }
@@ -243,7 +243,7 @@ export class DownloadManager extends Common {
   }
 
   public setSessionIdentifier(sessionIdentifier: string) {
-    this.sessionIdentifier = sessionIdentifier
+    this.sessionIdentifier = sessionIdentifier;
   }
 
   public updateTaskProgress(refId: string) {
@@ -305,7 +305,7 @@ export class DownloadManager extends Common {
     const task = this.currentTasks[refId];
     try {
       return task && super.isDownloadInProgress(refId)
-          && this.hwi.isDownloadingIdentifier(''+ task.refId);
+          && this.hwi.isDownloadingIdentifier(`${task.refId}`);
     } catch (err) {
       this._log(`isDownloadInProgress - Error: ${err}`);
       return false;

@@ -50,14 +50,14 @@ export class DownloadRequest {
    */
   iosOptions: iOSDownloadRequestOptions = {
     timeout: 60
-  }
+  };
 
   /**
    * Android specific download options.
    */
   androidOptions: AndroidDownloadRequestOptions = {
     showNotification: false
-  }
+  };
 
   constructor(url: string, destinationLocalUri: string) {
     this.url = url;
