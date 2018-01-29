@@ -106,7 +106,7 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
   }
 
   public localFileURLForIdentifierRemoteURL?(aDownloadIdentifier: string, aRemoteURL: NSURL): NSURL {
-    this._log(`HWI.localFileURLForIdentifierRemoteURL refId=${aDownloadIdentifier}, url=${aRemoteURL.path}`);
+    this._log(`HWI.localFileURLForIdentifierRemoteURL refId=${aDownloadIdentifier}, url=${aRemoteURL.absoluteString}`);
     const destPath = this.getDestinationLocalURI(aDownloadIdentifier);
     if (destPath) {
       this._log(`Downloaded file destination path: ${destPath}`);
