@@ -149,7 +149,7 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
       urlReq.allowsCellularAccess = task.request.allowedOverMetered;
       urlReq.timeoutInterval = task.request.iosOptions ?
         task.request.iosOptions.timeout : DEFAULT_REQUEST_IDLE_TIMEOUT;
-      this._log(`HWI.urlRequestForRemoteURL timeout=${task.request.iosOptions.timeout} ` +
+      this._log(`HWI.urlRequestForRemoteURL timeout=${urlReq.timeoutInterval} ` +
                 `allowsCellularAccess=${urlReq.allowsCellularAccess}`);
       if (task.request.extraHeaders) {
         for (const headerKey in task.request.extraHeaders) {
