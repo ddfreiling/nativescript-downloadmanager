@@ -22,7 +22,7 @@ export class DownloadManager extends Common {
 
   private get downloadManager(): android.app.DownloadManager {
     if (!this._downloadManager) {
-      this._downloadManager = app.android.context.getSystemService(android.content.Context.DOWNLOAD_SERVICE);
+      this._downloadManager = getAndroidAppContext().getSystemService(android.content.Context.DOWNLOAD_SERVICE);
     }
     return this._downloadManager;
   }

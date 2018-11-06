@@ -81,7 +81,6 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
     // see https://developer.apple.com/reference/foundation/nsurlsessionconfiguration
     // We default to allowing cellular access, as it can then be disallowed on a per-request basis in 'urlRequestForRemoteURL'.
     aBackgroundSessionConfiguration.allowsCellularAccess = true;
-    aBackgroundSessionConfiguration.timeoutIntervalForRequest;
     if (this.man.get()) {
       this.man.get().setSessionIdentifier(aBackgroundSessionConfiguration.identifier);
     }
@@ -218,7 +217,7 @@ export class DownloadManager extends Common {
     this.hwi = HWIFileDownloader.alloc().initWithDelegateMaxConcurrentDownloads(this.delegate, 5);
     this.ios = this.hwi;
     this.isReadyPromise = new Promise<void>((resolve) => {
-      this.hwi.setupWithCompletion(() => {
+      this.hwi.setupWithCompletionBlock(() => {
         this._log(`HWI.setup completed!`);
         this.loadPersistedTasks();
         this.cleanUpFinishedTasks();

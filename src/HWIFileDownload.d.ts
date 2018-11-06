@@ -132,7 +132,7 @@ declare class HWIFileDownloader extends NSObject {
 
   setBackgroundSessionCompletionHandlerBlock(aBackgroundSessionCompletionHandlerBlock: () => void): void;
 
-  setupWithCompletion(aSetupCompletionBlock: () => void): void;
+  setupWithCompletionBlock(aSetupCompletionBlock: () => void): void;
 
   startDownloadWithIdentifierFromRemoteURL(aDownloadIdentifier: string, aRemoteURL: NSURL): void;
 
