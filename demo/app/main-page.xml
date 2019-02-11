@@ -1,10 +1,12 @@
 <Page xmlns="http://schemas.nativescript.org/tns.xsd" loaded="pageLoaded">
   <StackLayout>
     <Label text="{{ message }}" class="message" textWrap="true"/>
-    <Button text="Stored Files" tap="onShowStoredFiles"></Button>
-    <Button text="Download File" tap="onDownload"></Button>
+    <Button text="Start Download" tap="onDownload"></Button>
+    <Button text="Pause" tap="pause"></Button>
+    <Button text="Resume" tap="resume"></Button>
     <Progress value="{{ progress }}"></Progress>
-    <Button text="ShowSpace" tap="onShowSpace"></Button>
+    <Button text="Print Files" tap="onShowStoredFiles" marginTop="30"></Button>
+    <Button text="Show Space" tap="onShowSpace"></Button>
     <Label text="{{ spaceAvailable + ' GB space' }}" textWrap="true"/>
     <Label text="{{ 'Status: ' + downloadState }}" textWrap="true" />
   </StackLayout>

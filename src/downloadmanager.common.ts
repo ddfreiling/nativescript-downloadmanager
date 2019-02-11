@@ -43,6 +43,8 @@ export abstract class Common implements DownloadManager {
   public abstract getDownloadsInProgress(): number[];
   public abstract downloadFile(request: DownloadRequest): Promise<number>;
   public abstract getDownloadStatus(refId: number): DownloadStatus;
+  public abstract pauseDownload(refIds: number);
+  public abstract resumeDownload(refIds: number);
   public abstract cancelDownloads(...refIds: number[]);
   public abstract getAvailableDiskSpaceInBytes(): number;
   public abstract iosSetBackgroundSessionCompletionHandler(sessionIdentifier: string, completionHandler: () => void): void;

@@ -25,7 +25,6 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
 
   public static ObjCProtocols = [ HWIFileDownloadDelegate ];
 
-  private static NETWORK_ACTIVITY_END_DELAY = 5000;
   private man: WeakRef<DownloadManager>;
   private isShowingNetworkActivity = false;
 
@@ -311,22 +310,43 @@ export class DownloadManager extends Common {
     }
   }
 
+  public pauseDownload(refId: number): boolean {
+    const task = this.currentTasks[refId];
+    if (!this.isReady || !task) {
+      return null;
+    }
+    const progress = this.hwi.downloadProgressForIdentifier(`${task.refId}`);
+    console.dir(progress);
+    if (!progress || !progress.nativeProgress || !progress.nativeProgress.pausable) {
+      return false;
+    }
+    progress.nativeProgress.pause();
+    return true;
+  }
+
+  public resumeDownload(refId: number) {
+    const task = this.currentTasks[refId];
+    if (!this.isReady || !task || !task.latestProgress) {
+      return null;
+    }
+    task.latestProgress.nativeProgress.resume();
+  }
+
   public getDownloadStatus(refId: number): DownloadStatus {
     const task = this.currentTasks[refId];
-    if (this.isReady && task) {
-      const status = {
-        refId: task.refId,
-        title: task.request.url,
-        downloadUri: task.request.url,
-        bytesDownloaded: task.latestProgress ? task.latestProgress.receivedFileSize : 0,
-        bytesTotal: task.latestProgress ? task.latestProgress.expectedFileSize : 0,
-        localUri: task.request.destinationLocalUri,
-        state: task.state,
-        reason: task.reason
-      };
-      return status;
+    if (!this.isReady || !task) {
+      return null;
     }
-    return null;
+    return {
+      refId: task.refId,
+      title: task.request.url,
+      downloadUri: task.request.url,
+      bytesDownloaded: task.latestProgress ? task.latestProgress.receivedFileSize : 0,
+      bytesTotal: task.latestProgress ? task.latestProgress.expectedFileSize : 0,
+      localUri: task.request.destinationLocalUri,
+      state: task.state,
+      reason: task.reason
+    };
   }
 
   public getDownloadsInProgress(): number[] {

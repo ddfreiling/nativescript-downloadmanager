@@ -38,6 +38,7 @@ export function onDownload() {
   req.addHeader('LBS-Token', 'LoremIpsum');
   downloadManager.downloadFile(req).then((refId) => {
     console.log(`Downloading with refId: ${refId}`);
+    model.set('refId', refId);
     const progressInterval = setInterval(() => {
       const status = downloadManager.getDownloadStatus(refId);
       // console.log(`Download status: ${JSON.stringify(status)}`);
@@ -56,6 +57,18 @@ export function onDownload() {
       }
     }, 1000);
   });
+}
+
+export function pause() {
+  const refId: number = model.get('refId');
+  const result = downloadManager.pauseDownload(refId);
+  console.log('Pause refId: ' + refId + ', result: ' + result);
+}
+
+export function resume() {
+  const refId: number = model.get('refId');
+  downloadManager.resumeDownload(refId);
+  console.log('Resume refId: ' + refId);
 }
 
 export function onShowStoredFiles() {

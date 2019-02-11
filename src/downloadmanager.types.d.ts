@@ -18,7 +18,7 @@ export interface AndroidDownloadRequestOptions {
 /**
  * iOS specific download options.
  */
-export interface iOSDownloadRequestOptions {
+export interface IOSDownloadRequestOptions {
     /**
      * Timeout for the download request.
      * If idle time exceeds this, the download will fail.
@@ -47,7 +47,7 @@ export declare class DownloadRequest {
     /**
      * iOS specific download options.
      */
-    iosOptions: iOSDownloadRequestOptions;
+    iosOptions: IOSDownloadRequestOptions;
     /**
      * Android specific download options.
      */
@@ -120,6 +120,14 @@ export declare class DownloadManager {
      * Cancels all active downloads.
      */
     cancelAllDownloads(): void;
+    /**
+     * Pause a single download. Only works on iOS
+     */
+    pauseDownload(refId: number): void;
+    /**
+     * Resumes a paused download. Only works on iOS
+     */
+    resumeDownload(refId: number): void;
     /**
      * Gets the absolute and canonical dir path,
      * for storing files externally.

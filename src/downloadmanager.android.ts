@@ -78,9 +78,17 @@ export class DownloadManager extends Common {
       // console.log('Request refId: ' + refId);
       return Promise.resolve(refId);
     } catch (ex) {
-      console.log('DownloadManager exception: ' + ex);
-      return Promise.reject(`Exception: ${ex}`);
+      this._log('DownloadManager exception: ' + ex);
+      return Promise.reject(`DownloadManager error: ${ex}`);
     }
+  }
+
+  pauseDownload(refId: number): void {
+    this._log('pauseDownload only available on iOS');
+  }
+
+  resumeDownload(refId: number): void {
+    this._log('resumeDownload only available on iOS');
   }
 
   cancelDownloads(...refIds: number[]) {
