@@ -1,7 +1,7 @@
+/// <reference path="HWIFileDownload.d.ts" />
+
 import * as fs from '@nativescript/core/file-system';
 import * as appSettings from '@nativescript/core/application-settings';
-import * as utils from '@nativescript/core/utils';
-import { WeakRef } from '@nativescript/core/debugger/dom-node';
 
 import { Common } from './downloadmanager.common';
 import { DownloadRequest, DownloadState, DownloadStatus } from './downloadmanager.types';
@@ -21,6 +21,7 @@ const FINISHED_TASK_RETENTION_MS = 1000 * 60 * 60 * 24 * 7; // 1 week
 const NETWORK_ACTIVITY_TIMEOUT_MS = 5000;
 const DEFAULT_REQUEST_IDLE_TIMEOUT = 60;
 
+@NativeClass()
 export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDownloadDelegate {
 
   public static ObjCProtocols = [ HWIFileDownloadDelegate ];
@@ -29,14 +30,12 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
   private man: WeakRef<DownloadManager>;
   private isShowingNetworkActivity = false;
 
-  public static alloc(): HWIFileDownloadDelegateImpl {
-    return <HWIFileDownloadDelegateImpl>super.alloc();
+  static new(): HWIFileDownloadDelegateImpl {
+    return <HWIFileDownloadDelegateImpl>super.new() // calls new() on the NSObject
   }
 
-  public initWithDownloadManager(man: DownloadManager): HWIFileDownloadDelegateImpl {
-    let self = super.init();
+  public setDownloadManager(man: DownloadManager): void {
     this.man = new WeakRef(man);
-    return self;
   }
 
   /**
@@ -51,7 +50,7 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
 
   public downloadDidCompleteWithIdentifierLocalFileURL(aDownloadIdentifier: string, aLocalFileURL: NSURL): void {
     this._log(`HWI.downloadDidComplete: ${aDownloadIdentifier} -> ${aLocalFileURL.absoluteString}`);
-    const man = this.man.get();
+    const man = this.man.deref();
     if (man) {
       man.updateTaskState(aDownloadIdentifier, DownloadState.SUCCESFUL);
       if (man.getDownloadsInProgress().length === 0) {
@@ -62,7 +61,7 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
 
   public downloadFailedWithIdentifierErrorHttpStatusCodeErrorMessagesStackResumeData(aDownloadIdentifier: string, anError: NSError, aHttpStatusCode: number, anErrorMessagesStack: NSArray<string>, aResumeData: NSData): void {
     this._log(`HWI.downloadDidFail: refId=${aDownloadIdentifier}, statuscode=${aHttpStatusCode}, errorDesc=${anError.localizedDescription}`);
-    const man = this.man.get();
+    const man = this.man.deref();
     if (man) {
       man.updateTaskState(aDownloadIdentifier, DownloadState.FAILED, anError.localizedDescription);
       if (man.getDownloadsInProgress().length === 0) {
@@ -81,14 +80,14 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
     // see https://developer.apple.com/reference/foundation/nsurlsessionconfiguration
     // We default to allowing cellular access, as it can then be disallowed on a per-request basis in 'urlRequestForRemoteURL'.
     aBackgroundSessionConfiguration.allowsCellularAccess = true;
-    if (this.man.get()) {
-      this.man.get().setSessionIdentifier(aBackgroundSessionConfiguration.identifier);
+    if (this.man.deref()) {
+      this.man.deref().setSessionIdentifier(aBackgroundSessionConfiguration.identifier);
     }
   }
 
   public downloadPausedWithIdentifierResumeData?(aDownloadIdentifier: string, aResumeData: NSData): void {
     this._log(`HWI: downloadDidPause: ${aDownloadIdentifier}, resumeData: ${aResumeData}`);
-    const man = this.man.get();
+    const man = this.man.deref();
     if (man) {
       man.updateTaskState(aDownloadIdentifier, DownloadState.PAUSED);
     }
@@ -97,7 +96,7 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
   private networkActivityTimeout: number;
 
   public downloadProgressChangedForIdentifier?(aDownloadIdentifier: string): void {
-    const man = this.man.get();
+    const man = this.man.deref();
     if (man) {
       man.updateTaskProgress(aDownloadIdentifier);
     }
@@ -143,7 +142,7 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
   public urlRequestForRemoteURL?(aRemoteURL: NSURL): NSURLRequest {
     this._log(`HWI.urlRequestForRemoteURL URL=${aRemoteURL.absoluteString}`);
     const urlReq = NSMutableURLRequest.requestWithURL(aRemoteURL);
-    const task = this.man.get() ? this.man.get().getTaskByURL(aRemoteURL.absoluteString) : null;
+    const task = this.man.deref() ? this.man.deref().getTaskByURL(aRemoteURL.absoluteString) : null;
     if (task) {
       urlReq.allowsCellularAccess = task.request.allowedOverMetered;
       urlReq.timeoutInterval = task.request.iosOptions ?
@@ -167,7 +166,7 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
    */
 
   private getDestinationLocalURI(refId: string): string {
-    const man = this.man.get();
+    const man = this.man.deref();
     if (!man) {
       return null;
     }
@@ -196,8 +195,8 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
   }
 
   private _log(logStr: string) {
-    if (this.man.get()) {
-      this.man.get()._log(logStr);
+    if (this.man.deref()) {
+      this.man.deref()._log(logStr);
     }
   }
 }
@@ -213,7 +212,9 @@ export class DownloadManager extends Common {
 
   constructor(debugOutputEnabled = false) {
     super(debugOutputEnabled);
-    this.delegate = HWIFileDownloadDelegateImpl.alloc().initWithDownloadManager(this);
+    let delegate = HWIFileDownloadDelegateImpl.new();
+    delegate.setDownloadManager(this);
+    this.delegate = delegate;
     this.hwi = HWIFileDownloader.alloc().initWithDelegateMaxConcurrentDownloads(this.delegate, 5);
     this.ios = this.hwi;
     this.isReadyPromise = new Promise<void>((resolve) => {

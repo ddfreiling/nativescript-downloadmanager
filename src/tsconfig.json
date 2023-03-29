@@ -1,13 +1,14 @@
 {
     "compilerOptions": {
-        "target": "es5",
-        "module": "commonjs",
+        "target": "es2020",
+        "module": "esnext",
         "declaration": true,
         "removeComments": false,
         "noLib": false,
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
-        "lib": ["es6", "dom"],
+        "moduleResolution": "node",
+        "lib": ["ESNext", "dom"],
         "sourceMap": true,
         "pretty": true,
         "allowUnreachableCode": false,
@@ -19,6 +20,8 @@
         "noImplicitUseStrict": false,
         "noFallthroughCasesInSwitch": true
     },
+    "include": ["*.ts"],
+    "files": ["./references.d.ts"],
     "exclude": [
         "node_modules"
     ],
