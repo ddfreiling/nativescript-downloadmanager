@@ -215,7 +215,7 @@ export class DownloadManager extends Common {
     let delegate = HWIFileDownloadDelegateImpl.new();
     delegate.setDownloadManager(this);
     this.delegate = delegate;
-    this.hwi = HWIFileDownloader.alloc().initWithDelegateMaxConcurrentDownloads(this.delegate, 5);
+    this.hwi = HWIFileDownloader.new().initWithDelegateMaxConcurrentDownloads(this.delegate, 5);
     this.ios = this.hwi;
     this.isReadyPromise = new Promise<void>((resolve) => {
       this.hwi.setupWithCompletionBlock(() => {

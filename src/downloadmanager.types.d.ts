@@ -149,19 +149,3 @@ export declare class DownloadManager {
      */
     destroy(): void;
 }
-export interface HWIFileDownloadDelegate {
-    customizeBackgroundSessionConfiguration?(aBackgroundSessionConfiguration: NSURLSessionConfiguration): void;
-    decrementNetworkActivityIndicatorActivityCount(): void;
-    downloadAtLocalFileURLIsValidForDownloadIdentifier?(aLocalFileURL: NSURL, aDownloadIdentifier: string): boolean;
-    downloadDidCompleteWithIdentifierLocalFileURL(aDownloadIdentifier: string, aLocalFileURL: NSURL): void;
-    downloadFailedWithIdentifierErrorHttpStatusCodeErrorMessagesStackResumeData(aDownloadIdentifier: string, anError: NSError, aHttpStatusCode: number, anErrorMessagesStack: NSArray<string>, aResumeData: NSData): void;
-    downloadPausedWithIdentifierResumeData?(aDownloadIdentifier: string, aResumeData: NSData): void;
-    downloadProgressChangedForIdentifier?(aDownloadIdentifier: string): void;
-    httpStatusCodeIsValidForDownloadIdentifier?(aHttpStatusCode: number, aDownloadIdentifier: string): boolean;
-    incrementNetworkActivityIndicatorActivityCount(): void;
-    localFileURLForIdentifierRemoteURL?(aDownloadIdentifier: string, aRemoteURL: NSURL): NSURL;
-    onAuthenticationChallengeDownloadIdentifierCompletionHandler?(aChallenge: NSURLAuthenticationChallenge, aDownloadIdentifier: string, aCompletionHandler: (p1: NSURLCredential, p2: NSURLSessionAuthChallengeDisposition) => void): void;
-    resumeDownloadWithIdentifier?(aDownloadIdentifier: string): void;
-    rootProgress?(): NSProgress;
-    urlRequestForRemoteURL?(aRemoteURL: NSURL): NSURLRequest;
-}
