@@ -70,7 +70,7 @@ export declare enum DownloadState {
     RUNNING = 2,
     PAUSED = 4,
     SUCCESFUL = 8,
-    FAILED = 16,
+    FAILED = 16
 }
 export interface DownloadStatus {
     refId: number;

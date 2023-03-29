@@ -1,5 +1,5 @@
-import * as app from 'tns-core-modules/application';
-import * as platform from 'tns-core-modules/platform';
+import * as app from '@nativescript/core/application';
+import * as platform from '@nativescript/core/platform';
 
 import {Common} from './downloadmanager.common';
 import {DownloadRequest, DownloadState, DownloadStatus} from './downloadmanager.types';
@@ -141,7 +141,7 @@ function getDownloadStatus(manager: android.app.DownloadManager, refId: number):
   return status;
 }
 
-function getDownloadStatusFromCursor(cursor: android.database.ICursor): DownloadStatus {
+function getDownloadStatusFromCursor(cursor: android.database.Cursor): DownloadStatus {
   return {
     refId: getCursorLong(cursor, android.app.DownloadManager.COLUMN_ID),
     title: getCursorString(cursor, android.app.DownloadManager.COLUMN_TITLE),
@@ -154,11 +154,11 @@ function getDownloadStatusFromCursor(cursor: android.database.ICursor): Download
   };
 }
 
-function getCursorLong(cursor: android.database.ICursor, colIndex: string): number {
+function getCursorLong(cursor: android.database.Cursor, colIndex: string): number {
   return cursor.getLong(cursor.getColumnIndex(colIndex));
 }
 
-function getCursorString(cursor: android.database.ICursor, colIndex: string): string {
+function getCursorString(cursor: android.database.Cursor, colIndex: string): string {
   return cursor.getString(cursor.getColumnIndex(colIndex));
 }
 
@@ -188,7 +188,7 @@ function ensureReason() {
   ]);
 }
 
-function getReason(cursor: android.database.ICursor): string {
+function getReason(cursor: android.database.Cursor): string {
   const reasonIndex = getCursorLong(cursor, android.app.DownloadManager.COLUMN_REASON);
 
   ensureReason();

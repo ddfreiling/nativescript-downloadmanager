@@ -1,5 +1,4 @@
-import * as app from 'tns-core-modules/application';
-import { isIOS } from 'tns-core-modules/platform';
+import { isIOS } from '@nativescript/core/platform';
 import { DownloadManager, DownloadRequest, DownloadState, DownloadStatus } from './downloadmanager.types';
 
 export abstract class Common implements DownloadManager {

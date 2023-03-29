@@ -1,7 +1,7 @@
-import * as fs from 'tns-core-modules/file-system';
-import * as http from 'tns-core-modules/http';
-import * as appSettings from 'tns-core-modules/application-settings';
-import * as utils from 'tns-core-modules/utils/utils';
+import * as fs from '@nativescript/core/file-system';
+import * as appSettings from '@nativescript/core/application-settings';
+import * as utils from '@nativescript/core/utils';
+import { WeakRef } from '@nativescript/core/debugger/dom-node';
 
 import { Common } from './downloadmanager.common';
 import { DownloadRequest, DownloadState, DownloadStatus } from './downloadmanager.types';
@@ -191,7 +191,7 @@ export class HWIFileDownloadDelegateImpl extends NSObject implements HWIFileDown
   private setNetworkActivityIndicatorVisible(visible: boolean) {
     this._log(`setNetworkActivityIndicatorVisible = ${visible}`);
     this.isShowingNetworkActivity = visible;
-    const sharedApp = utils.ios.getter(UIApplication, UIApplication.sharedApplication);
+    const sharedApp = UIApplication.sharedApplication;
     sharedApp.networkActivityIndicatorVisible = visible;
   }
 
@@ -357,7 +357,7 @@ export class DownloadManager extends Common {
 
   public getSizeOfFile(localFilePath: string): number {
     try {
-      const fileMan = utils.ios.getter(NSFileManager, NSFileManager.defaultManager);
+      const fileMan = NSFileManager.defaultManager;
       const dict = fileMan.attributesOfItemAtPathError(localFilePath);
       const fileSize = dict.valueForKey(NSFileSize);
       return fileSize ? fileSize.longValue : 0;
@@ -398,7 +398,7 @@ export class DownloadManager extends Common {
   }
 
   public getAvailableDiskSpaceInBytes(): number {
-    const fileMan: NSFileManager = utils.ios.getter(NSFileManager, NSFileManager.defaultManager);
+    const fileMan = NSFileManager.defaultManager;
     const paths = NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory.DocumentDirectory, NSSearchPathDomainMask.UserDomainMask, true);
     const fileSystemAttDict = fileMan.attributesOfFileSystemForPathError(paths.lastObject);
     return fileSystemAttDict.objectForKey(NSFileSystemFreeSize);
